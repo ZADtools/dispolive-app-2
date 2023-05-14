@@ -306,10 +306,52 @@ import MenuLink                                                                 
 import Global                                                                   from '../helpers/Global';
 import moment                                                                   from 'moment'
 import Dialog                                                                   from '../components/Dialog.vue';
-import { QSpinnerFacebook, Loading, Notify }                          from 'quasar';
+import { QSpinnerFacebook, Loading, Notify }                                    from 'quasar';
+import { useAccountStore }                                                      from 'src/stores/account.store';
+import { useFahrzeugeStore }                                                    from 'src/stores/fahrzeuge.store';
+import { useInventarStore }                                                     from 'src/stores/inventar.store';
+import { useMainStore }                                                         from 'src/stores/main.store';
+import { useSocketStore }                                                       from 'src/stores/socket.store';
+import { storeToRefs }                                                          from 'pinia';
 
 import debug                                                                    from 'debug';
 const log                                                                       = debug('app:MainLayout');
+
+const accountStore                                                             = useAccountStore();
+const   { 
+            keyboardHeight,
+            user, 
+            title, 
+            timer, 
+            secondHeader, 
+            searchContacts, 
+            fahrer, 
+            beifahrer, 
+            sendAppCarNote, 
+            navApps, 
+            standartNavigation,
+            connected:          networkConnected,
+            device,
+            darkMode,
+            pauseDialog,
+            lockDevice,
+            callDialog
+        } = storeToRefs(accountStore);
+
+const fahrzeugeStore  = useFahrzeugeStore();
+const { data, item: selectedCar } = storeToRefs(fahrzeugeStore);
+
+const inventarStore = useInventarStore();
+const { data: carItems, countItems: carCountItems } = storeToRefs(inventarStore);
+
+const mainStore = useMainStore();
+const { item: carStatus, adressChange, informPause } = storeToRefs(mainStore);
+
+const socketStore = useSocketStore();
+const { socket, connected } = storeToRefs(socketStore);
+
+//todoo
+//...useGetters( 'cardreader', { isScanning: 'isScanning' } ),
 
 const   leftDrawerOpen          = ref(false),
         search                  = ref(''),
@@ -334,32 +376,8 @@ const { router }                = useRouter();
 const global                    = Global();
 
         const getters           = {
-                ...useGetters( 'account', { 
-                    keyboardHeight: 'keyboardHeight',
-                    user:               'user', 
-                    title:              'title', 
-                    timer:              'timer', 
-                    secondHeader:       'secondHeader', 
-                    searchContacts:     'searchContacts', 
-                    fahrer:             'fahrer', 
-                    beifahrer:          'beifahrer', 
-                    sendAppCarNote:     'sendAppCarNote', 
-                    navApps:            'navApps', 
-                    standartNavigation: 'standartNavigation',
-                    networkConnected:   'connected',
-                    device:             'device',
-                    darkMode:           'darkMode',
-                    pauseDialog:        'pauseDialog',
-                    lockDevice:         'lockDevice',
-                    callDialog:         'callDialog'
-                } ),
-                ...useGetters( 'fahrzeuge', { data: 'data', selectedCar: 'item' } ),
-                ...useGetters( 'caritemlist', { carItems: 'data', carCountItems: 'countItems' } ),
-                ...useGetters( 'mainmenu', { carStatus: 'item', adressChange: 'adressChange', informPause: 'informPause' } ),
-                ...useGetters( 'socket', { socket: 'socket' } ),
-                ...useGetters( 'cardreader', { isScanning: 'isScanning' } ),
+                
                 ...useGetters( 'trips', { actDay: 'actDay', lastDeletedItem: 'lastDeletedItem' } ),
-                ...useGetters( 'socket', { connected: 'connected' } ),
                 ...useGetters( 'nav', { selectedNavPoint: 'selected', navItems: 'item' } ),
                 ...useGetters( 'dienstplan', { dienstplanData: 'data', pers: 'pers' } ),
                 ...useGetters( 'settings', { settings: 'data' } ),
