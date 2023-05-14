@@ -1,0 +1,17 @@
+{
+  "name": "dispolive-app",
+  "version": "0.0.1",
+  "description": "dispoistion app",
+  "author": "Christoph Düngel",
+  "private": true,
+  "dependencies": {
+    "@capacitor/app": "^5.0.2",
+    "@capacitor/app-launcher": "^5.0.2",
+    "@capacitor/cli": "^5.0.0",
+    "@capacitor/core": "^5.0.0",
+    "@capacitor/device": "^5.0.2",
+    "@capacitor/ios": "^5.0.3",
+    "@capacitor/network": "^5.0.2",
+    "@capacitor/status-bar": "^5.0.2"
+  }
+}

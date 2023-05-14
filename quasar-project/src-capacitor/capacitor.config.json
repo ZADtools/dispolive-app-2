@@ -1,0 +1,7 @@
+{
+  "appId": "capacitor.app.dispolive",
+  "appName": "dispolive App",
+  "bundledWebRuntime": false,
+  "npmClient": "npm",
+  "webDir": "www"
+}
