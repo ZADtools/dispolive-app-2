@@ -122,14 +122,14 @@
     
                 <q-toolbar class="bg-white row q-pa-sm" v-show="secondHeader == 'cardreader'">
                     <div class="col-6 q-pr-xs">
-                        <q-btn class="full-width ellipsis text-body1" padding="6px" color="primary" @click="startPairing">
+                        <q-btn class="full-width ellipsis text-body1" padding="6px" color="primary" @click="cardReaderStore.startPairing">
                             <div class="ellipsis">
                                 Gerät Koppeln
                             </div>
                         </q-btn>
                     </div>
                     <div class="col-6 q-pl-xs">
-                        <q-btn class="full-width ellipsis text-body1" padding="6px"  color="primary" @click="readCard">
+                        <q-btn class="full-width ellipsis text-body1" padding="6px"  color="primary" @click="cardReaderStore.readCard">
                             <div class="ellipsis">
                                 EGK lesen
                             </div>
@@ -174,11 +174,11 @@
             </q-page-container>
         </q-layout>
         <Dialog text="Möchten Sie sich wirklich ausloggen?" :value="logoutDialog" :func="callLogout" @input="(val) => logoutDialog = val"  />
-        <Dialog text="Möchten Sie wirklich den Rückruf eines Disponenten anfordern?" :value="callDialog" :func="callDisposition" @input="(val) => setCallDialog(val)"  />
+        <Dialog text="Möchten Sie wirklich den Rückruf eines Disponenten anfordern?" :value="callDialog" :func="menuStore.callDisposition" @input="(val) => accountStore.setCallDialog(val)"  />
         <Dialog v-if="specialrightDialog" :text="specialRightsDiaText" :value="specialrightDialog" okLabel="Ok" :abortShow="false" @input="(val) => specialrightDialog = val"  />
-        <Dialog v-if="pauseDialog" text="Sie haben mindestens eine aktive Fahrt! Sie können nicht in die Pause gehen!" :value="pauseDialog" okLabel="Ok" :abortShow="false" @input="(val) => setPauseDialog(val)"  />
-        <Dialog v-if="informPause" text="Sie wurden von der Leitstelle in die Pause geschickt!" :value="informPause" okLabel="Ok" :abortShow="false" @input="(val) => informStatusPause(val)"  />
-        <Dialog text="Eine Ihrer Fahrten wurde geändert. Bitte prüfen!" :abortShow="false" okLabel="OK" :value="adressChange" @input="(val) => setAdressChange(val)"  />
+        <Dialog v-if="pauseDialog" text="Sie haben mindestens eine aktive Fahrt! Sie können nicht in die Pause gehen!" :value="pauseDialog" okLabel="Ok" :abortShow="false" @input="(val) => accountStore.setPauseDialog(val)"  />
+        <Dialog v-if="informPause" text="Sie wurden von der Leitstelle in die Pause geschickt!" :value="informPause" okLabel="Ok" :abortShow="false" @input="(val) => menuStore.informStatusPause(val)"  />
+        <Dialog text="Eine Ihrer Fahrten wurde geändert. Bitte prüfen!" :abortShow="false" okLabel="OK" :value="adressChange" @input="(val) => menuStore.setAdressChange(val)"  />
         <Dialog 
             v-if="sendAppCarNote.note" 
             headertext="Nachricht von Zentrale!" 
@@ -193,7 +193,7 @@
             :value="lastDeletedItem.item ? true : false" 
             :text="setDeleteText(lastDeletedItem)" 
             okLabel="Ok" 
-            :func="setLastDeletedItem" 
+            :func="fahrberichteStore.setLastDeletedItem" 
             :abortShow="false" 
         />
         <Dialog v-if="noSpecialRightsAllowed" text="Während eines Linientransports können keine Sonderrechte gesetzt werden!" :value="pauseDialog" okLabel="Abbrechen" :abortShow="false" @input="(val) => noSpecialRightsAllowed = val"  />
@@ -304,14 +304,30 @@ import { onBeforeMount, ref, watch, onUnmounted }                               
 import  { useRouter }                                                           from 'vue-router';
 import MenuLink                                                                 from '../components/MenuLink.vue';
 import Global                                                                   from '../helpers/Global';
-import moment                                                                   from 'moment'
+import dayjs                                                                    from 'dayjs';
 import Dialog                                                                   from '../components/Dialog.vue';
 import { QSpinnerFacebook, Loading, Notify }                                    from 'quasar';
 import { useAccountStore }                                                      from 'src/stores/account.store';
 import { useFahrzeugeStore }                                                    from 'src/stores/fahrzeuge.store';
 import { useInventarStore }                                                     from 'src/stores/inventar.store';
-import { useMainStore }                                                         from 'src/stores/main.store';
+import { useMenuStore }                                                         from 'src/stores/menu.store';
 import { useSocketStore }                                                       from 'src/stores/socket.store';
+import { useFahrberichteStore }                                                 from 'src/stores/fahrberichte.store';
+import { useNavStore }                                                          from 'src/stores/nav.store';
+import { useDienstplanStore }                                                   from 'src/stores/dienstplan.store';
+import { useSettingsStore }                                                     from 'src/stores/settings.store';
+import { useMessangerStore }                                                    from 'src/stores/messanger.store';
+import { usePatientenStore }                                                    from 'src/stores/patienten.store';
+import { useKostentragerStore }                                                 from 'src/stores/kostentraeger.store';
+import { useDesiprotokolleStore }                                               from 'src/stores/desiprotokolle.store';
+import { useSerienKategorienStore }                                             from 'src/stores/serienkategorien.store';
+import { useInfektionenStore }                                                  from 'src/stores/infektionen.store';
+import { useCoststatusState }                                                   from 'src/stores/coststatus.store';
+import { useSonderleistungenStore }                                             from 'src/stores/sonderleistungen.store';
+import { useFahrberichtStore }                                                  from 'src/stores/fahrbericht.store';
+import { useAudioStore }                                                        from 'src/stores/audio.store';
+import { useAuditStore }                                                        from 'src/stores/audit.store';
+import { useCardreaderStore }                                                   from 'src/stores/cardreader.store';
 import { storeToRefs }                                                          from 'pinia';
 
 import debug                                                                    from 'debug';
@@ -319,39 +335,53 @@ const log                                                                       
 
 const accountStore                                                             = useAccountStore();
 const   { 
-            keyboardHeight,
-            user, 
             title, 
             timer, 
             secondHeader, 
-            searchContacts, 
-            fahrer, 
-            beifahrer, 
             sendAppCarNote, 
-            navApps, 
-            standartNavigation,
             connected:          networkConnected,
             device,
-            darkMode,
             pauseDialog,
             lockDevice,
             callDialog
         } = storeToRefs(accountStore);
 
 const fahrzeugeStore  = useFahrzeugeStore();
-const { data, item: selectedCar } = storeToRefs(fahrzeugeStore);
+const { item: selectedCar } = storeToRefs(fahrzeugeStore);
 
 const inventarStore = useInventarStore();
-const { data: carItems, countItems: carCountItems } = storeToRefs(inventarStore);
+const { countItems: carCountItems } = storeToRefs(inventarStore);
 
-const mainStore = useMainStore();
-const { item: carStatus, adressChange, informPause } = storeToRefs(mainStore);
+const menuStore = useMenuStore();
+const { item: carStatus, adressChange, informPause } = storeToRefs(menuStore);
 
-const socketStore = useSocketStore();
-const { socket, connected } = storeToRefs(socketStore);
+const fahrberichteStore = useFahrberichteStore();
+const { actDay, lastDeletedItem } = storeToRefs(fahrberichteStore);
 
-//todoo
-//...useGetters( 'cardreader', { isScanning: 'isScanning' } ),
+const navStore = useNavStore();
+const { item: navItems, selected: selectedNavPoint } = storeToRefs(navStore);
+
+const dienstplanStore = useDienstplanStore();
+const { pers } = storeToRefs(dienstplanStore);
+
+const settingsStore = useSettingsStore();
+
+const messengerStore = useMessangerStore();
+const { data: textBausteine, messengerLoad, unread} = storeToRefs(messengerStore);
+
+const cardReaderStore = useCardreaderStore();
+const { isScanning } = storeToRefs(cardReaderStore);
+
+const audioStore = useAudioStore();
+const patientenStore = usePatientenStore();
+const kostentraegerStore = useKostentragerStore();
+const desiprotokolleStore = useDesiprotokolleStore();
+const serienkategorienStore = useSerienKategorienStore();
+const infektionenStore = useInfektionenStore();
+const coststatusStore = useCoststatusState();
+const sonderleistungenStore = useSonderleistungenStore();
+const fahrberichtStore = useFahrberichtStore();
+const auditStore = useAuditStore();
 
 const   leftDrawerOpen          = ref(false),
         search                  = ref(''),
@@ -375,443 +405,385 @@ const   leftDrawerOpen          = ref(false),
 const { router }                = useRouter();
 const global                    = Global();
 
-        const getters           = {
-                
-                ...useGetters( 'trips', { actDay: 'actDay', lastDeletedItem: 'lastDeletedItem' } ),
-                ...useGetters( 'nav', { selectedNavPoint: 'selected', navItems: 'item' } ),
-                ...useGetters( 'dienstplan', { dienstplanData: 'data', pers: 'pers' } ),
-                ...useGetters( 'settings', { settings: 'data' } ),
-                ...useGetters( 'messages', { textBausteine: 'data', messengerLoad: 'messengerLoad', unread: 'unread'} )
-            },
-            actions       = {
-                ...useActions( 'messages', { getTextSnippets: 'getData', getMessages: 'getMessages', setSelectedText: 'setSelectedText' } ),
-                ...useActions( 'audio', { audioInit: 'init' } ),
-                ...useActions( 'patienten', { getPatientenData: 'getData' } ),
-                ...useActions( 'fahrzeuge', { getCarFromStorage: 'getDataFromStorage' }),
-                ...useActions( 'caritemlist', { getCarItems: 'getData' } ),
-                ...useActions( 'kostentraeger', { getKostentraegerData: 'getData' } ),
-                ...useActions( 'socket', { initSocket: 'init', removeSocket: 'remove' } ),
-                ...useActions( 'desiprotokolle', { getDesiData: 'getData', startTimer: 'startTimer' } ),
-                ...useActions( 'account', { 
-                    setAlwaysGeolocation:   'setAlwaysGeolocation',
-                    setSearchContacts:      'setSearchContacts', 
-                    logout:                 'logout', 
-                    setTitle:               'setTitle', 
-                    setSendAppCarNote:      'sendAppCarNote', 
-                    msgRead:                'msgRead', 
-                    checkkNaviagtionApps:   'checkkNaviagtionApps', 
-                    setStandartNavigation:  'setStandartNavigation',
-                    initKeyboardListener:   'initKeyboardListener',
-                    setDarkMode:            'setDarkMode',
-                    setPauseDialog:         'setPauseDialog',
-                    getLocationNow:         'getLocationNow',
-                    setLockDevice:          'setLockDevice',
-                    setCallDialog:          'setCallDialog'
-                } ),
-                ...useActions( 'trips', { getTrips: 'getData', setActDay: 'setActDay', setLastDeletedItem: 'setLastDeletedItem' } ),
-                ...useActions( 'serienkategorien', { getSerienKategorien: 'getData' } ),
-                ...useActions( 'infektion', {getInfektionsData: 'getData'}),
-                ...useActions( 'coststatus', {getCostStatusData: 'getData'}),
-                ...useActions( 'sonderleistungen', {getSonderleistungen: 'getData'}),
-                ...useActions( 'settings', {getSettings: 'getData'}),
-                ...useActions( 'dienstplan', {getDataDienstplan: 'getData', setPers: 'setPers'}),
-                ...useActions( 'mainmenu', { 
-                    informStatusPause: 'informStatusPause',
-                    setStatus: 'setStatus', 
-                    callDisposition: 'callDisposition', 
-                    setAdressChange: 'setAdressChange',
-                    setSonderrechteApp: 'setSonderrechteApp'
-                } ),
-                ...useActions( 'trip', { setActTrip: 'setActTrip' } ),
-                ...useActions( 'audit', { setAuditItem: 'setItem' } ),
-                ...useActions( 'cardreader', { startPairing: 'startPairing', readCard: 'readCard' } )
+const linksList = ref(global.navigation);
 
-            };
+onBeforeMount( async () => {
+    const progressData = {
+        spinner: QSpinnerFacebook,
+        spinnerColor: 'primary',
+        spinnerSize: 140,
+        backgroundColor: 'grey-8',
+        message: 'Daten für den Tag werden geladen...',
+        messageColor: 'white'
+    }
 
-        const linksList = ref(global.navigation);
+    const day = dayjs().format('YYYY-MM-DD')
 
-        onBeforeMount( async () => {
-            const progressData = {
-                spinner: QSpinnerFacebook,
-                spinnerColor: 'primary',
-                spinnerSize: 140,
-                backgroundColor: 'grey-8',
-                message: 'Daten für den Tag werden geladen...',
-                messageColor: 'white'
-            }
+    Loading.show(progressData)
+    
+    try {
+        dienstplanStore.setPers('')
+        log('setPers')
 
-            const day = moment().format('YYYY-MM-DD')
-
-            Loading.show(progressData)
-            
-            try {
-                actions.setPers('')
-                log('setPers')
-
-                if ( getters.device.value.platform === 'android' ) {
-                    await actions.initKeyboardListener();
-                    log('initKeyboardListener done')
-                }
-
-                await actions.getCarFromStorage();
-                log('getCarFromStorage done')
-                await actions.getCarItems(getters.selectedCar.value._id);
-                log('getCarItems done')
-                await actions.getSerienKategorien();
-                log('getSerienKategorien done')
-                await actions.getPatientenData();
-                log('getPatientenData done')
-                await actions.getKostentraegerData();
-                log('getKostentraegerData done')
-                await actions.getSonderleistungen();
-                log('getSonderleistungen done')
-                await actions.getDesiData();
-                log('getDesiData done')
-                await actions.getInfektionsData();
-                log('getInfektionsData done')
-                await actions.getCostStatusData();
-                log('getCostStatusData done')
-                await actions.getSettings();
-                log('getSettings done')
-                await actions.checkkNaviagtionApps();
-                log('checkkNaviagtionApps done', getters.navApps);
-                actions.audioInit();
-                log('audioInit done');
-                await actions.setStandartNavigation();
-                log('setStandartNavigation done', getters.standartNavigation)
-                await actions.getMessages({index: 0});
-                log('getMessages done')
-                await actions.getTextSnippets();
-                log('getTextSnippets done');
-
-                //get navigation points
-                linksList.value = global.navigation.filter( (item) => {
-                    log(item)
-                    if ( getters.settings.value.kontakte === 1 && item.link === 'contact' )
-                        return false
-                    else if ( getters.settings.value.dienstplan === 1 && item.link === 'checklistEmployee' )
-                        return false
-                    else
-                        return true
-                } );
-
-                loadDay(day);
-
-                loadedData.value = true;
-
-                Loading.hide();
-
-                const welcome = Notify.create({
-                    message: '<div class="text-bold">dispolive ist nun einsatzbereit.</div>Wir wünschen Ihnen einen angenehmen Arbeitstag.',
-                    position: 'center',
-                    progress: true,
-                    timeout: 3000,
-                    html: true,
-                    color: 'secondary',
-                    classes: 'glossy',
-                    actions: [
-                        { label: 'Schliessen', glossy:true, class:'bg-teal-8',  color: 'white', handler: () => { welcome(false) } }
-                    ]
-                })
-            } catch (err) {
-                Loading.hide();
-
-                Notify.create({
-                    message: '<div class="text-bold">Fehler beim laden der Daten!</div>Sie wurden zum Login weitergeleitet.',
-                    position: 'center',
-                    progress: true,
-                    timeout: 5000,
-                    html: true,
-                    color: 'negative',
-                    classes: 'glossy',
-                })
-
-                callLogout();
-            }
-        });
-
-        onUnmounted( () => {
-            actions.removeSocket();
-        } )
-
-        function setLockDevice () {
-            actions.setLockDevice(true)
+        if ( accountStore.device.value.platform === 'android' ) {
+            await accountStore.initKeyboardListener();
+            log('initKeyboardListener done')
         }
 
-        function setUnlockDevice () {
-            actions.setLockDevice(false)
-        }
+        await fahrzeugeStore.getCarFromStorage();
+        log('getCarFromStorage done')
+        await inventarStore.getData(selectedCar.value._id);
+        log('getCarItems done')
+        await serienkategorienStore.getData();
+        log('getSerienKategorien done')
+        await patientenStore.getData();
+        log('getPatientenData done')
+        await kostentraegerStore.getData();
+        log('getKostentraegerData done')
+        await sonderleistungenStore.getData();
+        log('getSonderleistungen done')
+        await desiprotokolleStore.getData();
+        log('getDesiData done')
+        await infektionenStore.getData();
+        log('getInfektionsData done')
+        await coststatusStore.getData();
+        log('getCostStatusData done')
+        await settingsStore.getData();
+        log('getSettings done')
+        await accountStore.checkkNaviagtionApps();
+        log('checkkNaviagtionApps done');
+        audioStore.init();
+        log('audioInit done');
+        await accountStore.setStandartNavigation();
+        log('setStandartNavigation done')
+        await messengerStore.getMessages({index: 0});
+        log('getMessages done')
+        await messengerStore.getData();
+        log('getTextSnippets done');
 
-        async function loadDay () {
-            disable.value = true;
-
-            const day = selectedDay.value === 'next' ? moment(getters.actDay.value, 'YYYY-MM-DD').add(1, 'days').format('YYYY-MM-DD') : moment().format('YYYY-MM-DD');
-            switch (selectedDay.value) {
-                case 'next':
-                    actions.setActDay(day);
-                    await actions.getTrips(day);
-                    break;
-                default:
-                    actions.setActDay(day);
-                    await actions.getTrips(day);
-                    break;
-            }
-
-            disable.value = false;
-        }
-
-        function changeDay ( item ) {
-            changeDayDialog.value = true;
-            selectedDay.value = item;
-        }   
-
-        async function loadDienstplan( pers ) {
-            disableDienst.value = true;
-
-            actions.setPers(pers);
-
-            const person = getters[pers].value;
-
-            await actions.getDataDienstplan(person);
-
-            disableDienst.value = false;
-        }
-
-        function searchContacts () {
-            actions.setSearchContacts(search.value)
-        }
-
-        function setDeleteText ( item ) {
-            let text = item.item.patSurname + ', ' + item.item.patName;
-
-            if ( !item.item.patSurname && !item.item.patName && !item.item.materialfahrt)
-                text = 'Keine Patientenangaben vorhanden'
-
-            if ( item.item.type === 'Linie' )
-                text = item.item.titel
-
-            if ( item.item.materialfahrt )
-                text = 'Materialfahrt'
-
-            return `Die Fahrt <b>${text}</b> wurde Ihnen vom Disponenten entzogen!`
-        }
-
-        function setNextDayLabel ( type ) {
-            let label = 'Heute'
-
-            if ( type === 'next' )
-                label = 'Nächster Tag';
-
-            if (type === 'next' && getters.actDay.value !== moment().format('YYYY-MM-DD')) {
-                btnColorToday.value = 'primary';
-                btnColorNext.value = 'negative';
-            }
-            
-            if (type === 'today' && getters.actDay.value === moment().format('YYYY-MM-DD')) {
-                btnColorToday.value = 'negative';
-                btnColorNext.value = 'primary';
-            }
-        
-            return label;
-        }
-
-        function getKrz(pers) {
-            const person = getters[pers].value;
-            
-            if ( person.name )
-                return `${person.surname}, ${person.name}`
-        }
-
-        function setSpecialRights () {
-            specialRightsForm.value.validate().then( async (success) => {
-                if ( success ) {
-                    confirmSpecialRights.value = false;
-
-                    for ( const fb of selectedFahrten.value ) {
-                        const data = {
-                            _id:            fb._id,
-                            car:            getters.selectedCar.value._id,
-                            sonderrechte:   1,
-                            status:         'sonderrechte'
-                        }
-
-                        const sonderBemerkung = {
-                            _id:                fb._id,
-                            sonderBemerkung:    specialRightText.value
-                        }
-            
-                        await actions.setAuditItem({ type:'zeitstempel', value: data });
-                        await actions.setAuditItem({ type:'sonderNotice', value: sonderBemerkung, noAlert: true });
-                        await actions.setStatus({status: 'sonderrechte'});   
-                    }
-                }
-            } )
-        }
-
-        async function specialrights () {
-            specialRightText.value = '';
-
-            if (getters.navItems.value.length === 0) {
-                specialRightsDiaText.value  = 'Sonderrechte können nur während einer aktiven Fahrt gesetzt werden!'
-                specialrightDialog.value    = true;
-                return 
-            }
-
-            if (getters.navItems.value.length === 1 && getters.navItems.value[0].item.type === 'Linie') {
-                specialRightsDiaText.value  = 'Sonderrechte können nicht für eine Linie eingeschaltet werden!'
-                specialrightDialog.value    = true;
-                return 
-            }
-
-            if (getters.navItems.value.length === 1 && getters.navItems.value[0].item.sonderrechte) {
-                specialRightsDiaText.value  = 'Für diese Fahrt wurden bereits Sonderrechte eingeschaltet'
-                specialrightDialog.value    = true;
-                return 
-            }
-
-            if (getters.navItems.value.length > 1 ) {
-                specialRightsDiaText.value  = 'Sonderrechte können nicht gesetzt werden, wenn 2 oder mehr Fahrten angenommen wurden.'
-                specialrightDialog.value    = true;
-                return 
-            }
-
-            selectedFahrten.value = [];
-
-            let selectedLinie = false;
-
-            if ( getters.navItems.value.length === 1 ) {
-                if (!selectedFahrten.value.sonderrechte && !selectedFahrten.value.type !== 'Linie')
-                    selectedFahrten.value.push(getters.navItems.value[0].item);
-
-                if ( selectedFahrten.value.type === 'Linie' )
-                    selectedLinie = true;
-            } else {
-                getters.navItems.value.every( item => {
-                    if ( selectedFahrten.value.type === 'Linie' ) {
-                        selectedLinie = true;
-                        return false;
-                    }
-
-                    if (item.item && !item.item.sonderrechte && item.item.type !== 'Linie')
-                        selectedFahrten.value.push(item.item);
-
-                    return true;
-                } )
-            }
-
-            if (selectedLinie)
-                noSpecialRightsAllowed.value = true;
-
-            if (getters.navItems.value.length === 1 && !selectedLinie) {
-                confirmSpecialRights.value = true;
-            }
-        }
-
-        function showMenuLink ( link ) {
-            if ( getters.device.value.platform === 'android' && link.link === 'cardreader' )
+        //get navigation points
+        linksList.value = global.navigation.filter( (item) => {
+            log(item)
+            if ( settingsStore.settings.value.kontakte === 1 && item.link === 'contact' )
                 return false
-
-            if ( !getters.carCountItems.value && link.link === 'checklistCar')
+            else if ( settingsStore.settings.value.dienstplan === 1 && item.link === 'checklistEmployee' )
                 return false
+            else
+                return true
+        } );
 
-            return true
-        }
+        loadDay(day);
 
-        async function pause () {
-            const stat = await actions.setStatus({status: 'pause'});
-            if (stat && stat.error) {
-                actions.setPauseDialog(true)
-            }
-        }
+        loadedData.value = true;
 
-        function readAppCarNote() {
-            actions.msgRead( getters.sendAppCarNote.value )
-            actions.setSendAppCarNote({car: getters.selectedCar.value._id});
-        }
-        
-        watch( getters.navItems, ( newVal ) => {
-            log('observe navItems length', newVal, getters.carStatus.value)
-            if ( getters.carStatus.value.status === 'pause' )
-                return
+        Loading.hide();
 
-            if (newVal.length === 0)
-                actions.setStatus({status: 'frei'});
-            
-            //check if navItem specalrights
-            if ( getters.carStatus.value.sonderrechte ) {
-                let sonderrechteExists = false
-                newVal.forEach( ( nav ) => {
-                    if ( nav.sonderrechte )
-                        sonderrechteExists = true
-                } )
+        const welcome = Notify.create({
+            message: '<div class="text-bold">dispolive ist nun einsatzbereit.</div>Wir wünschen Ihnen einen angenehmen Arbeitstag.',
+            position: 'center',
+            progress: true,
+            timeout: 3000,
+            html: true,
+            color: 'secondary',
+            classes: 'glossy',
+            actions: [
+                { label: 'Schliessen', glossy:true, class:'bg-teal-8',  color: 'white', handler: () => { welcome(false) } }
+            ]
+        })
+    } catch (err) {
+        Loading.hide();
 
-                if (!sonderrechteExists) {
-                    actions.setSonderrechteApp(false)
-                }
-            }
-
-            if (newVal.length > 0) {
-                const status = newVal.find( (item) => {
-                    if ( !item.item.zielBegin )
-                        return true
-                    else
-                        return false
-                } )
-
-                if (!status)
-                    actions.setStatus({status: 'zielBegin'});
-            }
-        } )
-
-        watch( getters.selectedNavPoint, async ( item ) => {
-            if (item.item && item.item._id)
-                actions.setActTrip( item.item );
-
-            if (item.title && !item.function && item.title !== 'Logout')
-                actions.setTitle( item.title );
-
-            if (item.function) {
-                if ( item.function === 'specialrights' )
-                    specialrights()
-
-                if ( item.function === 'pause' ) {
-                    await pause()
-                }
-
-                return true;
-            }
-
-            if (item.link)
-                switch ( item.link) {
-                    case 'logout':
-                        logoutDialog.value = true;
-                        break;
-                    default:
-                        router.push( `/app/${item.link}` ).catch(err => err);
-                        break;
-                }
+        Notify.create({
+            message: '<div class="text-bold">Fehler beim laden der Daten!</div>Sie wurden zum Login weitergeleitet.',
+            position: 'center',
+            progress: true,
+            timeout: 5000,
+            html: true,
+            color: 'negative',
+            classes: 'glossy',
         })
 
-        function callLogout() {
-            actions.logout();
-            router.push( '/' ).catch(err => err);
-            window.location.reload()
+        callLogout();
+    }
+});
+
+onUnmounted( () => {
+    useSocketStore.remove();
+} )
+
+function setLockDevice () {
+    accountStore.setLockDevice(true)
+}
+
+function setUnlockDevice () {
+    accountStore.setLockDevice(false)
+}
+
+async function loadDay () {
+    disable.value = true;
+
+    const day = selectedDay.value === 'next' ? dayjs(actDay.value, 'YYYY-MM-DD').add(1, 'days').format('YYYY-MM-DD') : dayjs().format('YYYY-MM-DD');
+    switch (selectedDay.value) {
+        case 'next':
+            fahrberichteStore.setActDay(day);
+            await fahrberichteStore.getData(day);
+            break;
+        default:
+            fahrberichteStore.setActDay(day);
+            await fahrberichteStore.getData(day);
+            break;
+    }
+
+    disable.value = false;
+}
+
+function changeDay ( item ) {
+    changeDayDialog.value = true;
+    selectedDay.value = item;
+}   
+
+async function loadDienstplan( pers ) {
+    disableDienst.value = true;
+
+    dienstplanStore.setPers(pers);
+
+    const person = [pers].value;
+
+    await dienstplanStore.getData(person);
+
+    disableDienst.value = false;
+}
+
+function searchContacts () {
+    accountStore.setSearchContacts(search.value)
+}
+
+function setDeleteText ( item ) {
+    let text = item.item.patSurname + ', ' + item.item.patName;
+
+    if ( !item.item.patSurname && !item.item.patName && !item.item.materialfahrt)
+        text = 'Keine Patientenangaben vorhanden'
+
+    if ( item.item.type === 'Linie' )
+        text = item.item.titel
+
+    if ( item.item.materialfahrt )
+        text = 'Materialfahrt'
+
+    return `Die Fahrt <b>${text}</b> wurde Ihnen vom Disponenten entzogen!`
+}
+
+function setNextDayLabel ( type ) {
+    let label = 'Heute'
+
+    if ( type === 'next' )
+        label = 'Nächster Tag';
+
+    if (type === 'next' && actDay.value !== dayjs().format('YYYY-MM-DD')) {
+        btnColorToday.value = 'primary';
+        btnColorNext.value = 'negative';
+    }
+    
+    if (type === 'today' && actDay.value === dayjs().format('YYYY-MM-DD')) {
+        btnColorToday.value = 'negative';
+        btnColorNext.value = 'primary';
+    }
+
+    return label;
+}
+
+function getKrz(pers) {
+    const person = [pers].value;
+    
+    if ( person.name )
+        return `${person.surname}, ${person.name}`
+}
+
+function setSpecialRights () {
+    specialRightsForm.value.validate().then( async (success) => {
+        if ( success ) {
+            confirmSpecialRights.value = false;
+
+            for ( const fb of selectedFahrten.value ) {
+                const data = {
+                    _id:            fb._id,
+                    car:            selectedCar.value._id,
+                    sonderrechte:   1,
+                    status:         'sonderrechte'
+                }
+
+                const sonderBemerkung = {
+                    _id:                fb._id,
+                    sonderBemerkung:    specialRightText.value
+                }
+    
+                await auditStore.setItem({ type:'zeitstempel', value: data });
+                await auditStore.setItem({ type:'sonderNotice', value: sonderBemerkung, noAlert: true });
+                await menuStore.setStatus({status: 'sonderrechte'});   
+            }
+        }
+    } )
+}
+
+async function specialrights () {
+    specialRightText.value = '';
+
+    if (navItems.value.length === 0) {
+        specialRightsDiaText.value  = 'Sonderrechte können nur während einer aktiven Fahrt gesetzt werden!'
+        specialrightDialog.value    = true;
+        return 
+    }
+
+    if (navItems.value.length === 1 && navItems.value[0].item.type === 'Linie') {
+        specialRightsDiaText.value  = 'Sonderrechte können nicht für eine Linie eingeschaltet werden!'
+        specialrightDialog.value    = true;
+        return 
+    }
+
+    if (navItems.value.length === 1 && navItems.value[0].item.sonderrechte) {
+        specialRightsDiaText.value  = 'Für diese Fahrt wurden bereits Sonderrechte eingeschaltet'
+        specialrightDialog.value    = true;
+        return 
+    }
+
+    if (navItems.value.length > 1 ) {
+        specialRightsDiaText.value  = 'Sonderrechte können nicht gesetzt werden, wenn 2 oder mehr Fahrten angenommen wurden.'
+        specialrightDialog.value    = true;
+        return 
+    }
+
+    selectedFahrten.value = [];
+
+    let selectedLinie = false;
+
+    if ( navItems.value.length === 1 ) {
+        if (!selectedFahrten.value.sonderrechte && !selectedFahrten.value.type !== 'Linie')
+            selectedFahrten.value.push(navItems.value[0].item);
+
+        if ( selectedFahrten.value.type === 'Linie' )
+            selectedLinie = true;
+    } else {
+        navItems.value.every( item => {
+            if ( selectedFahrten.value.type === 'Linie' ) {
+                selectedLinie = true;
+                return false;
+            }
+
+            if (item.item && !item.item.sonderrechte && item.item.type !== 'Linie')
+                selectedFahrten.value.push(item.item);
+
+            return true;
+        } )
+    }
+
+    if (selectedLinie)
+        noSpecialRightsAllowed.value = true;
+
+    if (navItems.value.length === 1 && !selectedLinie) {
+        confirmSpecialRights.value = true;
+    }
+}
+
+function showMenuLink ( link ) {
+    if ( device.value.platform === 'android' && link.link === 'cardreader' )
+        return false
+
+    if ( !carCountItems.value && link.link === 'checklistCar')
+        return false
+
+    return true
+}
+
+async function pause () {
+    const stat = await menuStore.setStatus({status: 'pause'});
+    if (stat && stat.error) {
+        accountStore.setPauseDialog(true)
+    }
+}
+
+function readAppCarNote() {
+    accountStore.msgRead( sendAppCarNote.value )
+    accountStore.sendAppCarNote({car: selectedCar.value._id});
+}
+
+watch( navItems, ( newVal ) => {
+    log('observe navItems length', newVal, carStatus.value)
+    if ( carStatus.value.status === 'pause' )
+        return
+
+    if (newVal.length === 0)
+        menuStore.setStatus({status: 'frei'});
+    
+    //check if navItem specalrights
+    if ( carStatus.value.sonderrechte ) {
+        let sonderrechteExists = false
+        newVal.forEach( ( nav ) => {
+            if ( nav.sonderrechte )
+                sonderrechteExists = true
+        } )
+
+        if (!sonderrechteExists) {
+            menuStore.setSonderrechteApp(false)
+        }
+    }
+
+    if (newVal.length > 0) {
+        const status = newVal.find( (item) => {
+            if ( !item.item.zielBegin )
+                return true
+            else
+                return false
+        } )
+
+        if (!status)
+            menuStore.setStatus({status: 'zielBegin'});
+    }
+} )
+
+watch( selectedNavPoint, async ( item ) => {
+    if (item.item && item.item._id)
+        fahrberichtStore.setActTrip( item.item );
+
+    if (item.title && !item.function && item.title !== 'Logout')
+        accountStore.setTitle( item.title );
+
+    if (item.function) {
+        if ( item.function === 'specialrights' )
+            specialrights()
+
+        if ( item.function === 'pause' ) {
+            await pause()
         }
 
-        function setLastDeletedItem() {
-            actions.setLastDeletedItem({})
-        }
+        return true;
+    }
 
-        function setStartTimer() {
-            actions.startTimer(true)
+    if (item.link)
+        switch ( item.link) {
+            case 'logout':
+                logoutDialog.value = true;
+                break;
+            default:
+                router.push( `/app/${item.link}` ).catch(err => err);
+                break;
         }
+})
 
-        function clickTextbaustein ( text ) {
-            console.log('click')
-            actions.setSelectedText(text)
+function callLogout() {
+    accountStore.logout();
+    router.push( '/' ).catch(err => err);
+    window.location.reload()
+}
 
-            showTextSnippets.value = false;
-        }
+function setStartTimer() {
+    desiprotokolleStore.startTimer(true)
+}
+
+function clickTextbaustein ( text ) {
+    messengerStore.setSelectedText(text)
+
+    showTextSnippets.value = false;
+}
 </script>
 
 <style lang="scss">

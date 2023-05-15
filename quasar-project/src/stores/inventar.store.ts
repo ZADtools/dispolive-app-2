@@ -1,10 +1,7 @@
-import { defineStore, storeToRefs }  from 'pinia';
-import { LocalStorage } from 'quasar';
+import { defineStore }  from 'pinia';
 import Debug            from 'debug';
-import { useAccountStore } from './account.store';
 
 const log       = Debug('app:fahrzeuge.module');
-
 export interface IInventarItem {
     _id:            string;
 }
@@ -55,23 +52,19 @@ export const useInventarStore = defineStore('inventarStore', {
                 // }
                 
                 // commit( 'setData', items.data );
-            }
-            catch(error) {
+            } catch (error) {
                 log( 'Error getData', error );
                 this._data = [];
-                throw error;
             }
         },
         // getData
-        async getCount( carId: string ) {
-            
+        async getCount(  ) {
             try {
                 //TODO
                 // const items     = await accountService.getDataSocket( { rootGetters, event: 'fetchInventarCount', param: {} } );
                 // commit( 'setCount', items );
 
-            }
-            catch(error) {
+            } catch (error) {
                 log( 'Error getData', error );
                 this._count = {};
                 throw error;

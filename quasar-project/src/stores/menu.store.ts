@@ -1,12 +1,19 @@
 import { defineStore, storeToRefs }     from 'pinia';
 import Debug                            from 'debug';
+import { uid }                          from 'quasar';
 import { useAccountStore }              from './account.store';
 import { useFahrzeugeStore }            from './fahrzeuge.store';
+import { useSocketStore }               from './socket.store';
+import { useNavStore }                  from './nav.store';
+import { useAuditStore }                from './audit.store';
 import pack                             from '../../package.json'
 import dayjs                            from 'dayjs';
 
 const log       = Debug('app:fahrzeuge.module');
 
+export interface IStopItem {
+    timestamp:      string;
+}
 export interface IFahrbericht {
     _id:            string;
     fahrzeug:       string;
@@ -15,6 +22,25 @@ export interface IFahrbericht {
     zielBegin:      string;
     ziel:           string;
     frei:           string;
+    startTime:      string;
+    date:           string;
+    sendStatusRead: boolean;
+    patSurname:     string;
+    patName:        string;
+    type:           string;
+    titel?:          string;
+    materialfahrt?: boolean;
+    stops?:         IStopItem[];
+    startStreet?:   string;
+    startZip?:      string;
+    startCity?:     string;
+    targetStreet?:    string;
+    targetZip?:       string;
+    targetCity?:      string;
+    startLat?:        number;
+    startLng?:        number;
+    targetLat?:       number;
+    targetLng?:       number;
 }
 
 export interface IMenuState {
@@ -26,7 +52,7 @@ export interface IMenuState {
     },
     _adressChange:   boolean,
     _informPause:    boolean,
-    _pauseTime:      String
+    _pauseTime:      string
 }
 
 export const useMenuStore = defineStore('menuStore', {
@@ -53,14 +79,14 @@ export const useMenuStore = defineStore('menuStore', {
         informStatusPause( data: boolean ) {
             this._informPause = data;
         },
-        setSonderrechteApp( status: string ) {
+        setSonderrechteApp( ) {
             const accountStore      = useAccountStore();
             const { sessionId }     = storeToRefs(accountStore);
 
             const fahrzeugeStore    = useFahrzeugeStore();
             const { item }          = storeToRefs(fahrzeugeStore);
             
-            let data: any = {
+            const data: any = {
                 sessionID: sessionId.value,
                 status: { 
                     car:            item.value?._id,
@@ -68,8 +94,11 @@ export const useMenuStore = defineStore('menuStore', {
                     version:        pack.version
                 }
             };
-            //TODO
-            //rootGetters['socket/io'].emit('setCarStatus', data);
+
+            const socketStore       = useSocketStore();
+            const { io }            = storeToRefs(socketStore);
+
+            io.value.emit('setCarStatus', data);
             this._item.sonderrechte = false;
         },
         setAdressChange( status: boolean ) {
@@ -81,7 +110,6 @@ export const useMenuStore = defineStore('menuStore', {
             //dispatch('setSelectedText', 'Rückruf angefordert', {root: true})
         },
         async setProgress( fb: IFahrbericht ) {
-            
             let progress = 0;
             let status = { key: 'startBegin', text: 'Anfahrt' };
 
@@ -114,59 +142,64 @@ export const useMenuStore = defineStore('menuStore', {
             const { item }          = storeToRefs(fahrzeugeStore);
 
             const accountStore      = useAccountStore();
-            const { sessionId }     = storeToRefs(accountStore);
+            const { sessionId, fahrer, beifahrer }     = storeToRefs(accountStore);
+
+            const navStore          = useNavStore();
+            const { item: navItem } = storeToRefs(navStore);
 
             if ( !item.value?._id)
                 return {error: 'noCar'}
-            //TODO
-            // if (status == 'pause' && rootGetters['nav/item'].length > 0)
-            //     return {error: 'activeTrips'}
 
-            // if (status !== 'zielBegin' && status !== 'sonderrechte' && status !== 'pause' && rootGetters['nav/item'].length > 0) {
-            //     status = 'besetzt';
-            // }
-            // if (status !== 'zielBegin' && status !== 'sonderrechte' && status !== 'pause' && rootGetters['nav/item'].length  === 0) {
-            //     status = 'frei';
-            // }
+            if (status === 'pause' && navItem.value.length > 0)
+                return {error: 'activeTrips'}
 
-            // if (status !== 'zielBegin' && status !== 'sonderrechte' && status !== 'pause' && status == 'pause' && state.item.status == 'pause')
-            //     status = 'frei';
+            if (status !== 'zielBegin' && status !== 'sonderrechte' && status !== 'pause' && navItem.value.length > 0) {
+                status = 'besetzt';
+            }
+            if (status !== 'zielBegin' && status !== 'sonderrechte' && status !== 'pause' && navItem.value.length  === 0) {
+                status = 'frei';
+            }
+
+            if (status !== 'zielBegin' && status !== 'sonderrechte' && status !== 'pause' && status === 'pause' && this._item.status === 'pause')
+                status = 'frei';
             
-            // if ( status === 'logout' )
-            //     status = '';
+            if ( status === 'logout' )
+                status = '';
 
-            // if ( status == 'pause' ) {
-            //     let stempel = {
-            //         _id:        uid(),
-            //         fahrer:     rootGetters['account/fahrer'],
-            //         beifahrer:  rootGetters['account/beifahrer'],
-            //         car:        rootGetters['fahrzeuge/item'],
-            //         date:       moment().format('YYYY-MM-DD'),
-            //         time:       moment().format('HH:mm'),
-            //         pause:      status == 'pause' && state.item.status == 'pause' ? false : true
-            //     };
+            if ( status === 'pause' ) {
+                const stempel = {
+                    _id:        uid(),
+                    fahrer,
+                    beifahrer,
+                    car:        item,
+                    date:       dayjs().format('YYYY-MM-DD'),
+                    time:       dayjs().format('HH:mm'),
+                    pause:      status === 'pause' && this._item.status === 'pause'
+                };
 
-            //     dispatch("audit/setItem", {type: 'pauseStatus', value: stempel}, {root: true});
-            //     dispatch('audit/sendData', {}, {root: true});
-            // }
+                const auditStore        = useAuditStore();
 
-            if ( status == 'pause' && this._item.status == 'pause')
+                auditStore.setItem({type: 'pauseStatus', value: stempel})
+                auditStore.sendData()
+            }
+
+            if ( status === 'pause' && this._item.status === 'pause')
                 status = 'frei';
 
-            if (status == 'sonderrechte') {
+            if (status === 'sonderrechte') {
                 this._item.sonderrechte = true;
                 //return;
             }
     
             if ( status !== 'zielBegin' )
-                this.item.status = status
+                this._item.status = status || ''
 
             if (this._item.status === 'pause')
                 this._pauseTime = dayjs().format('HH:mm')
             else
                 this._pauseTime = ''
 
-            let data: any = {
+            const data: any = {
                 sessionID:          sessionId.value,
                 status: { 
                     car:            item.value?._id,
@@ -183,18 +216,19 @@ export const useMenuStore = defineStore('menuStore', {
 
             log('setStatus', data, status)
 
-            if (status == 'zielBegin'){
+            const socketStore      = useSocketStore();
+            const { io }           = storeToRefs(socketStore);
+
+            if (status === 'zielBegin') {
                 data.status.sonderrechte = 0;
-                //TODO
-                //rootGetters['socket/io'].emit( 'setSonderrechte', data );
+                io.value.emit( 'setSonderrechte', data );
             }
 
-            if ( status == 'sonderrechte' ) {
+            if ( status === 'sonderrechte' ) {
                 data.status.sonderrechte = 1;
-                //TODO
-                //rootGetters['socket/io'].emit( 'setSonderrechte', data );
-            }else {
-                //rootGetters['socket/io'].emit('setCarStatus', data);
+                io.value.emit( 'setSonderrechte', data );
+            } else {
+                io.value.emit('setCarStatus', data);
             }
         },
         createSocketRoom( ) {
@@ -203,23 +237,24 @@ export const useMenuStore = defineStore('menuStore', {
 
             const accountStore      = useAccountStore();
             const { sessionId }     = storeToRefs(accountStore);
-            //TODO
-            // if (car && rootGetters['socket/io']) {
-            //     log('createSocketRoom')
-            //     //erstelle einen chatroom oder benutze einen vorhandenen
-            //     rootGetters['socket/io'].emit(
-            //         'setCarConn',
-            //         {
-            //             car:        car.value?._id,
-            //             conn:       'online',
-            //             sessionID:  sessionId.value,
-            //         }, () => {
-            //             log('setCarConn')
-            //         }
-            //     );
-            // }
-        }
-        
+            
+            const socketStore       = useSocketStore()
+            const { io }            = storeToRefs(socketStore)
 
-    },
+            if (car && io.value) {
+                log('createSocketRoom')
+                //erstelle einen chatroom oder benutze einen vorhandenen
+                io.value.emit(
+                    'setCarConn',
+                    {
+                        car:        car.value?._id,
+                        conn:       'online',
+                        sessionID:  sessionId.value,
+                    }, () => {
+                        log('setCarConn')
+                    }
+                )
+            }
+        }
+    }
 });

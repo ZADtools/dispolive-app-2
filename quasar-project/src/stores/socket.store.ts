@@ -1,8 +1,9 @@
 import { defineStore, storeToRefs }         from 'pinia';
-import { LocalStorage }                     from 'quasar';
 import Debug                                from 'debug';
 import { useAccountStore }                  from './account.store';
 import { useMenuStore }                     from './menu.store';
+import { useMessengerStore }                from './messenger.store';
+import { useFahrberichteStore }             from './fahrberichte.store';
 import { sock1 }                            from '@w4b/socket-1';
 import { ISocket4, sock4 }                  from '@w4b/socket-4';
 import { App }                              from '@capacitor/app';
@@ -62,19 +63,20 @@ export const useSocketStore = defineStore('socketStore', {
 
             return new Promise( ( resolve, reject) => {
                 try {
-
                     log( 'after init', sockHdl );
 
                     sockHdl.on('connect', () => {
                         this._connected = true;
-                        //TODO
-                        //dispatch('trips/getChangesFb', {}, {root: true})
+
+                        const fahrberichteStore = useFahrberichteStore();
+                        fahrberichteStore.getChangesFb();
 
                         menuStore.createSocketRoom()
                         menuStore.setStatus({})
 
-                        //TODO
-                        //dispatch( 'messages/getMessagesNow', null, {root: true} )
+                        const messengerStore = useMessengerStore();
+                        messengerStore.getMessagesNow()
+
                         resolve(true)
                     })
 
@@ -86,17 +88,16 @@ export const useSocketStore = defineStore('socketStore', {
 
                     sockHdl.on('receivedFb', () => {
                         log('receivedFb')
-                        //TODO
-                        //dispatch('trips/getChangesFb', {}, {root: true})
+                        const fahrberichteStore = useFahrberichteStore();
+                        fahrberichteStore.getChangesFb();
                     });
             
-                    sockHdl.on( 'sendAppCarNote', async ( data: any ) => {
-                        //TODO
-                        //dispatch('messages/getMessagesNow', data, { root: true });
+                    sockHdl.on( 'sendAppCarNote', async ( ) => {
+                        const messengerStore = useMessengerStore();
+                        messengerStore.getMessagesNow()
                     });
 
-                    sockHdl.on( 'addCarToPause', async ( data: any ) => {
-
+                    sockHdl.on( 'addCarToPause', async ( ) => {
                         if ( item.value?.status !== 'frei' )
                             return;
 
@@ -109,10 +110,7 @@ export const useSocketStore = defineStore('socketStore', {
 
                         menuStore.informStatusPause(true)
                     });
-
-                    
-                }
-                catch(error) {
+                } catch (error) {
                     reject();
                 }
             })

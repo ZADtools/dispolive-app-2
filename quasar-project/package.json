@@ -13,9 +13,12 @@
   },
   "dependencies": {
     "@quasar/extras": "^1.0.0",
+    "@w4b/socket-1": "https://github.com/RobertPrediger/socket-1.git",
+    "@w4b/socket-4": "https://github.com/RobertPrediger/socket-4.git",
     "axios": "^1.2.1",
     "dayjs": "^1.11.7",
     "debug": "^4.3.4",
+    "idb": "^7.1.1",
     "pinia": "^2.0.11",
     "quasar": "^2.6.0",
     "vue": "^3.0.0",

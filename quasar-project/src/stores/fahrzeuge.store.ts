@@ -1,7 +1,7 @@
-import { defineStore, storeToRefs }  from 'pinia';
-import { LocalStorage } from 'quasar';
-import Debug            from 'debug';
-import { useAccountStore } from './account.store';
+import { defineStore, storeToRefs }     from 'pinia';
+import { LocalStorage }                 from 'quasar';
+import Debug                            from 'debug';
+import { useAccountStore }              from './account.store';
 
 const log       = Debug('app:fahrzeuge.module');
 
@@ -49,20 +49,20 @@ export const useFahrzeugeStore = defineStore('fahrzeugeStore', {
             const { beifahrer } = storeToRefs(accountStore);
             this._data = [];
 
-            let param: any = { 
+            const param: any = { 
                 filter: {
                     aktive: '1'
                 } 
             }   
             
             if ( beifahrer.value && beifahrer.value.firma.length > 0 ) {
-                param.filter['$or'] = [
+                param.filter.$or = [
                     {firma: ''}, 
                     {firma:  {$exists: false}} 
                 ]
 
                 beifahrer.value.firma.forEach( (firma: string) => {
-                    param.filter['$or'].push({ firma })
+                    param.filter.$or.push({ firma })
                 } )
             }
 
@@ -72,12 +72,10 @@ export const useFahrzeugeStore = defineStore('fahrzeugeStore', {
                 // const fahrzeuge     = await accountService.getDataSocket( { rootGetters, event: 'getCars', param } );
                 // this._data          = fahrzeuge;
                 this._loadData      = false;
-            }
-            catch(error) {
+            } catch (error) {
                 log( 'Error getData', error );
                 this._loadData = false;
                 this._data = [];
-                throw error;
             }
         },
 

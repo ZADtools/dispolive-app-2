@@ -1,22 +1,24 @@
-import { defineStore } from 'pinia';
+import { defineStore, storeToRefs } from 'pinia';
 import { Network }                                  from '@capacitor/network';
 import { Device }                                   from '@capacitor/device';
-import { App }                                      from '@capacitor/app';
 import { AppLauncher }                              from '@capacitor/app-launcher';
 import { StatusBar, Style }                         from '@capacitor/status-bar';
-
-import _, { result }                                from 'lodash'; 
 import debug                                        from 'debug';
-import { LocalStorage, openURL, Notify, Dialog }    from 'quasar'
-import { useStore }                                 from '@u3u/vue-hooks';
-
-import { IRootState }                               from './index';
-import { accountService }                           from '../services/account.service';
-import { Dark }                                     from 'quasar';
-import BackgroundGeolocation                        from "@transistorsoft/capacitor-background-geolocation";
-
+import { LocalStorage, openURL, Notify, Dark }      from 'quasar'
+//import { accountService }                           from '../services/account.service';
+//import BackgroundGeolocation                        from '@transistorsoft/capacitor-background-geolocation';
+import { useFahrberichtStore }                      from './fahrbericht.store';
+import { useNavStore }                              from './nav.store';
+import { useInventarStore }                         from './inventar.store';
+import { useFahrberichteStore }                     from './fahrberichte.store';
+import { useDienstplanStore }                       from './dienstplan.store';
+import { useAudioStore }                            from './audio.store';
+import { useAuditStore }                            from './audit.store';
+import { useMessengerStore }                        from './messenger.store';
 import { Keyboard }                                 from '@capacitor/keyboard';
+import { useSocketStore }                           from './socket.store';
 import { version }                                  from '../../package.json';
+import { useFahrzeugeStore }                        from './fahrzeuge.store';
 
 const log                                           = debug('app:account.module');
 
@@ -93,7 +95,7 @@ export interface IAccountState {
     _checkVersion:       boolean;
     _connected:          boolean;
     _sendAppCarNote:     any;
-    _darkMode:           boolean | "auto";
+    _darkMode:           boolean | 'auto';
     _navApps:            any;
     _standartNavigation: any;
     _keyboardHeight:     number;
@@ -124,10 +126,13 @@ export const useAccountStore = defineStore('accountStore', {
         _searchContacts:     '',
         _pauseDialog:        false,
         _geoPos:             { 
+            car:        '',
+            timestamp:  null,
             coords:     {
                 longitude:  null,
                 latitude:   null
-            }
+            },
+            sessionID:  null
         },
         _actVersion:         false,
         _checkVersion:       false,
@@ -188,23 +193,24 @@ export const useAccountStore = defineStore('accountStore', {
             let target = '';
 
             switch ( type ) {
-                case 'fahrbericht': 
-                    //TODO
-                    // const item = rootGetters['trip/item'];
+                case 'fahrbericht': {
+                    const fahrberichtStore = useFahrberichtStore();
+                    const { item }  = storeToRefs(fahrberichtStore);
                
-                    // target = `${item.startStreet}, ${item.startZip} ${item.startCity}`;
+                    target = `${item.value?.startStreet}, ${item.value?.startZip} ${item.value?.startCity}`;
 
-                    // if (  item.startEnd )
-                    //     target = `${item.targetStreet}, ${item.targetZip} ${item.targetCity}`;
+                    if (  item.value?.startEnd )
+                        target = `${item.value?.targetStreet}, ${item.value?.targetZip} ${item.value?.targetCity}`;
 
-                    // if ( state.standartNavigation.name === 'Here' ) {
-                    //     target = `${item.startLat}, ${item.startLng}`;
+                    if ( this._standartNavigation.name === 'Here' ) {
+                        target = `${item.value?.startLat}, ${item.value?.startLng}`;
 
-                    //     if (  item.startEnd )
-                    //         target = `${item.targetLat}, ${item.targetLng}`;
-                    // }
+                        if (  item.value?.startEnd )
+                            target = `${item.value?.targetLat}, ${item.value?.targetLng}`;
+                    }
                     
                     break;
+                }
                 case 'patient':
                     target = `${datId.street}, ${datId.zip} ${datId.city}`;
 
@@ -217,26 +223,25 @@ export const useAccountStore = defineStore('accountStore', {
                     break;
             }
 
-            if ( this._standartNavigation.name !== 'Here' || type == 'Linie' )
+            if ( this._standartNavigation.name !== 'Here' || type === 'Linie' )
                 target = new URLSearchParams(target).toString().slice(0, -1);
 
             log('TARGET', target, this._standartNavigation.name, this._device.platform, this.geoPos.coords)
 
-            if (this._standartNavigation.name === 'Karten' || (!this._standartNavigation.name && this._device.platform == 'ios') || (this._standartNavigation.name == 'Here' && this._device.platform == 'ios' && type == 'Linie') ) {
+            if (this._standartNavigation.name === 'Karten' || (!this._standartNavigation.name && this._device.platform === 'ios') || (this._standartNavigation.name === 'Here' && this._device.platform === 'ios' && type === 'Linie') ) {
                 log('maps://?daddr=' + target);
                 openURL(`maps://?daddr=${target}&dirflg=d`)
                 return 
             }
 
-            if (this._standartNavigation.name === 'Google Maps' || (!this._standartNavigation.name && this._device.platform == 'android') || (this._standartNavigation.name == 'Here' && this._device.platform == 'android' && type == 'Linie' ) ) {
-                openURL(`${ 'https://www.google.com/maps/dir/?api=1&destination='}${target}&dirflg=d`)
+            if (this._standartNavigation.name === 'Google Maps' || (!this._standartNavigation.name && this._device.platform === 'android') || (this._standartNavigation.name === 'Here' && this._device.platform === 'android' && type === 'Linie' ) ) {
+                openURL(`${'https://www.google.com/maps/dir/?api=1&destination='}${target}&dirflg=d`)
                 return
             }
 
-            if ( this._standartNavigation.name === 'Here' && this._geoPos.coords.longitude && type !== 'Linie' ){
+            if ( this._standartNavigation.name === 'Here' && this._geoPos.coords.longitude && type !== 'Linie' ) {
                 log('HERE', this._standartNavigation.name, this._geoPos )
-                openURL( `${this._device.platform == 'ios' ? 'here-route://mylocation/' : 'here-route://mylocation/'}${target}` )
-                return
+                openURL(`${this._device.platform === 'ios' ? 'here-route://mylocation/' : 'here-route://mylocation/'}${target}` )
             }
         },
         async setDarkMode( status: boolean ) {
@@ -253,8 +258,8 @@ export const useAccountStore = defineStore('accountStore', {
             this._standartNavigation = LocalStorage.getItem('navigation') || '';
         },
         async checkkNavigationApps( ) {
-            const googlemaps    = await AppLauncher.canOpenUrl({ url: this._device.platform == 'ios' ? 'comgooglemaps://' : 'com.google.android.apps.maps' });
-            const here          = await AppLauncher.canOpenUrl({ url: this._device.platform == 'ios' ? 'here-route://' : 'com.here.app.maps' });
+            const googlemaps    = await AppLauncher.canOpenUrl({ url: this._device.platform === 'ios' ? 'comgooglemaps://' : 'com.google.android.apps.maps' });
+            const here          = await AppLauncher.canOpenUrl({ url: this._device.platform === 'ios' ? 'here-route://' : 'com.here.app.maps' });
             const applemaps     = await AppLauncher.canOpenUrl({ url: 'mapitem://' });
 
             const navApps = [
@@ -264,29 +269,28 @@ export const useAccountStore = defineStore('accountStore', {
                 },
                 {
                     name:       'Google Maps',
-                    installed:  this._device.platform == 'ios' ? googlemaps.value : true,
-                    scheme:     this._device.platform == 'ios' ? 'https://www.google.com/maps/dir/?api=1&destination=' : 'https://www.google.com/maps/dir/?api=1&destination='
+                    installed:  this._device.platform === 'ios' ? googlemaps.value : true,
+                    scheme:     this._device.platform === 'ios' ? 'https://www.google.com/maps/dir/?api=1&destination=' : 'https://www.google.com/maps/dir/?api=1&destination='
                 },
                 {
                     name:       'Here',
-                    installed:  this._device.platform == 'ios' ? here.value : true,
-                    scheme:    this._device.platform == 'ios' ? 'here-route://mylocation/' : 'here.directions://v1.0/mylocation/'
+                    installed:  this._device.platform === 'ios' ? here.value : true,
+                    scheme:    this._device.platform === 'ios' ? 'here-route://mylocation/' : 'here.directions://v1.0/mylocation/'
                 }
             ]
 
-            if ( this._device.platform == 'ios' )
+            if ( this._device.platform === 'ios' )
                 navApps.push({
                     name:       'Karten',
-                    installed:  applemaps.value ? true : false,
+                    installed:  !applemaps.value,
                     scheme: 'maps.apple.com/'
                 })
 
             this._navApps = navApps;
         },
-        async getMyLocation( acknowledge: any ) {
+        async getMyLocation( ) {
             if ( !this._connected ) {
-            
-               Notify .create({
+                Notify.create({
                     type: 'negative',
                     message: 'Es ist keine Internevebindung vorhanden',
                     position: 'bottom',
@@ -313,9 +317,9 @@ export const useAccountStore = defineStore('accountStore', {
                 classes: 'glossy',
             })
         },
-        async initKeyboardListener (){
+        async initKeyboardListener () {
             Keyboard.addListener('keyboardWillShow', (keyboard: any) => {
-                if (this.device.platform === "android")
+                if (this.device.platform === 'android')
                     this._keyboardHeight = keyboard.keyboardHeight;
             });
 
@@ -324,157 +328,152 @@ export const useAccountStore = defineStore('accountStore', {
             });
         },
         setAlwaysGeolocation( ) {
-            BackgroundGeolocation.setConfig({
-                locationAuthorizationRequest: 'Always'
-            });
+            //TODO
+            // BackgroundGeolocation.setConfig({
+            //     locationAuthorizationRequest: 'Always'
+            // });
         },
-        async startGeoPosWatch( { commit, dispatch, state } : any ) {
+        async startGeoPosWatch( ) {
             log('startGeoPosWatch')
+            //TODO
+            // if ( this._device.platform === 'ios' ) {
+            //     await BackgroundGeolocation.ready({
+            //         disableMotionActivityUpdates: true, //Fitness data
+            //         heartbeatInterval: 60,
+            //         stopTimeout: 14,
+            //         enableHeadless: true,
+            //         stopOnTerminate: false,
+            //         preventSuspend: true,
+            //         desiredOdometerAccuracy: 10,
+            //         distanceFilter: 0,
+            //         locationUpdateInterval: 1000,
+            //         disableStopDetection: true,
+            //         pausesLocationUpdatesAutomatically: false,
+            //         debug: false,
+            //         desiredAccuracy: BackgroundGeolocation.DESIRED_ACCURACY_HIGH,
+            //         locationAuthorizationRequest: 'Always',
+            //         backgroundPermissionRationale: {
+            //         title: '{applicationName} erlauben, die Standortdaten zu lesen?',
+            //             message: '',
+            //             positiveAction: 'Ändern auf: {backgroundPermissionOptionLabel}',
+            //             negativeAction: 'Abbrechen'
+            //         },
+            //         //disableLocationAuthorizationAlert: false
+            //         locationAuthorizationAlert: {
+            //             titleWhenNotEnabled: "Geolocation 'Immer' ist nicht aktiviert",
+            //             titleWhenOff: 'Geolocation ist ausgeschaltet',
+            //             instructions: "Bitte gehen Sie in die Einstellungen und schalten Sie 'Standort -> immer' an",
+            //             cancelButton: 'Abbrechen',
+            //             settingsButton: 'Einstellungen'
+            //         }
+            //     }).then( async () => {
+            //         BackgroundGeolocation.start();  
 
-            if ( this._device.platform == 'ios' ) {
-                await BackgroundGeolocation.ready({
-                    disableMotionActivityUpdates: true, //Fitness data
-                    heartbeatInterval: 60,
-                    stopTimeout: 14,
-                    enableHeadless: true,
-                    stopOnTerminate: false,
-                    preventSuspend: true,
-                    desiredOdometerAccuracy: 10,
-                    distanceFilter: 0,
-                    locationUpdateInterval: 1000,
-                    disableStopDetection: true,
-                    pausesLocationUpdatesAutomatically: false,
-                    debug: false,
-                    desiredAccuracy: BackgroundGeolocation.DESIRED_ACCURACY_HIGH,
-                    locationAuthorizationRequest: "Always",
-                    backgroundPermissionRationale: {
-                    title: "{applicationName} erlauben, die Standortdaten zu lesen?",
-                        message: "",
-                        positiveAction: "Ändern auf: {backgroundPermissionOptionLabel}",
-                        negativeAction: "Abbrechen"
-                    },
-                    //disableLocationAuthorizationAlert: false
-                    locationAuthorizationAlert: {
-                        titleWhenNotEnabled: "Geolocation 'Immer' ist nicht aktiviert",
-                        titleWhenOff: "Geolocation ist ausgeschaltet",
-                        instructions: "Bitte gehen Sie in die Einstellungen und schalten Sie 'Standort -> immer' an",
-                        cancelButton: "Abbrechen",
-                        settingsButton: "Einstellungen"
-                    }
-                }).then( async (state) => {
+            //         BackgroundGeolocation.setConfig({
+            //             locationAuthorizationRequest: 'Always'
+            //         });
 
-                    BackgroundGeolocation.start();  
+            //         await this.getLocationNow()
+            //     });
+            // } else {
+            //     await BackgroundGeolocation.ready({
+            //         disableMotionActivityUpdates: true, //Fitness Tracker
+            //         heartbeatInterval: 60,
+            //         stopTimeout: 14,
+            //         enableHeadless: true,
+            //         stopOnTerminate: true,
+            //         preventSuspend: true,
+            //         desiredOdometerAccuracy: 10,
+            //         distanceFilter: 0,
+            //         locationUpdateInterval: 1000,
+            //         disableStopDetection: true,
+            //         pausesLocationUpdatesAutomatically: false,
+            //         debug: false,
+            //         desiredAccuracy: BackgroundGeolocation.DESIRED_ACCURACY_HIGH,
+            //         locationAuthorizationRequest: 'WhenInUse',
+            //         backgroundPermissionRationale: {
+            //         title: '{applicationName} erlauben, die Standortdaten zu lesen?',
+            //             message: '',
+            //             positiveAction: 'Ändern auf: {backgroundPermissionOptionLabel}',
+            //             negativeAction: 'Abbrechen'
+            //         },
+            //         //disableLocationAuthorizationAlert: false
+            //         locationAuthorizationAlert: {
+            //             titleWhenNotEnabled: "Geolocation 'Beim verwenden' ist nicht aktiviert",
+            //             titleWhenOff: 'Geolocation ist ausgeschaltet',
+            //             instructions: "Bitte gehen Sie in die Einstellungen und schalten Sie 'Standort -> immer' an",
+            //             cancelButton: 'Abbrechen',
+            //             settingsButton: 'Einstellungen'
+            //         }
+            //     }).then( async () => {
+            //         BackgroundGeolocation.start();  
 
-                    BackgroundGeolocation.setConfig({
-                        locationAuthorizationRequest: 'Always'
-                    });
-                    //TODO
-                    dispatch('getLocationNow')
+            //         BackgroundGeolocation.setConfig({
+            //             locationAuthorizationRequest: 'Always'
+            //         });
+                 
+            //         this.getLocationNow()
+            //     });
+            // }
 
-                    //await BackgroundGeolocation.changePace(true);
+            // BackgroundGeolocation.changePace(true);
 
-                    // setInterval( async () => {
-                    //     const justNowLocation = await BackgroundGeolocation.getCurrentPosition({});
-                    //     sendCoords(justNowLocation)
-                    // }, 1000)
-                });
-            } else {
-                await BackgroundGeolocation.ready({
-                    disableMotionActivityUpdates: true, //Fitness Tracker
-                    heartbeatInterval: 60,
-                    stopTimeout: 14,
-                    enableHeadless: true,
-                    stopOnTerminate: true,
-                    preventSuspend: true,
-                    desiredOdometerAccuracy: 10,
-                    distanceFilter: 0,
-                    locationUpdateInterval: 1000,
-                    disableStopDetection: true,
-                    pausesLocationUpdatesAutomatically: false,
-                    debug: false,
-                    desiredAccuracy: BackgroundGeolocation.DESIRED_ACCURACY_HIGH,
-                    locationAuthorizationRequest: "WhenInUse",
-                    backgroundPermissionRationale: {
-                    title: "{applicationName} erlauben, die Standortdaten zu lesen?",
-                        message: "",
-                        positiveAction: "Ändern auf: {backgroundPermissionOptionLabel}",
-                        negativeAction: "Abbrechen"
-                    },
-                    //disableLocationAuthorizationAlert: false
-                    locationAuthorizationAlert: {
-                        titleWhenNotEnabled: "Geolocation 'Beim verwenden' ist nicht aktiviert",
-                        titleWhenOff: "Geolocation ist ausgeschaltet",
-                        instructions: "Bitte gehen Sie in die Einstellungen und schalten Sie 'Standort -> immer' an",
-                        cancelButton: "Abbrechen",
-                        settingsButton: "Einstellungen"
-                    }
-                }).then( async (state) => {
-
-                    BackgroundGeolocation.start();  
-
-                    BackgroundGeolocation.setConfig({
-                        locationAuthorizationRequest: 'Always'
-                    });
-                    //TODO
-                    dispatch('getLocationNow')
-
-                });
-            }
-
-            BackgroundGeolocation.changePace(true);
-
-            BackgroundGeolocation.onHeartbeat(({ location }: { location: any }) => {
-                if ( this._loggedIn ) {
-                    this.sendCoords(location)
-                }
-            });
+            // BackgroundGeolocation.onHeartbeat(({ location }: { location: any }) => {
+            //     if ( this._loggedIn ) {
+            //         this.sendCoords(location)
+            //     }
+            // });
         
-            const geolocationWatchId =  BackgroundGeolocation.onLocation(async (location: any) => {
-                this.sendCoords(location)
+            // const geolocationWatchId =  BackgroundGeolocation.onLocation(async (location: any) => {
+            //     this.sendCoords(location)
+            // }, ( error: any ) => {
+            //     log('[location] ERROR: ', error);
+            // });
 
-            }, ( error: any ) => {
-                log("[location] ERROR: ", error);
-            });
-
-            this._geolocationWatchId = geolocationWatchId;
+            // this._geolocationWatchId = geolocationWatchId;
         },
         setLockDevice ( data: boolean ) {
             this._lockDevice = data;
         },
-        async sendCoords( data: { location: string } ) {
-            //TODO
-            //const sessionID = rootGetters['account/sessionId'];
+        async sendCoords( data: { location: any } ) {
+            const fahrzeugeStore = useFahrzeugeStore();
+            const { item: car } = storeToRefs(fahrzeugeStore);
 
-            // const location = data.location || data;
+            const sessionID = this._sessionId;
 
-            // const cord = {
-            //     car:        rootGetters['fahrzeuge/item']._id,
-            //     coords:     {
-            //         longitude:  location.coords && location.coords.longitude,
-            //         latitude:   location.coords && location.coords.latitude
-            //     },
-            //     timestamp:  location.timestamp,
-            //     sessionID
-            // }
+            const location = data.location || data;
 
-            //this._geoPos = cord;
-            
-            //TODO
-            //rootGetters['socket/io'].emit( 'getCarPos', cord )
+            if ( car.value && location ) {
+                const cord = {
+                    car:        car.value._id || '',
+                    coords:     {
+                        longitude:  location.coords && location.coords.longitude,
+                        latitude:   location.coords && location.coords.latitude
+                    },
+                    timestamp:  location.timestamp,
+                    sessionID
+                }
 
+                this._geoPos = cord;
+                const socketStore = useSocketStore();
+
+                socketStore.io.emit( 'getCarPos', cord )
+            }
         },
         async getLocationNow( ) {
-            const location = await BackgroundGeolocation.getCurrentPosition({});
-            this.sendCoords(location)
+            //TODO
+            //const location = await BackgroundGeolocation.getCurrentPosition({});
+            //this.sendCoords(location)
         },
         sendAppCarNote( data: { text: string, car: string  } ) {
-            //TODO
-            //if ( rootGetters['fahrzeuge/item']._id == data.car )
-                //this._sendAppCarNote = data
+            const fahrzeugeStore = useFahrzeugeStore();
+            const { item: car } = storeToRefs(fahrzeugeStore);
+            if ( car.value?._id === data.car )
+                this._sendAppCarNote = data
         },
         msgRead( data: any ) {
-            //TODO
-            //rootGetters['socket/io'].emit( 'msgRead', data )
+            const socketStore = useSocketStore();
+            socketStore.io.emit( 'msgRead', data )
         },
         async startNetworkWatch( ) {
             const stat = await Network.getStatus();
@@ -495,18 +494,18 @@ export const useAccountStore = defineStore('accountStore', {
             this._checkVersion = true
             this._errorVersion = false
             this.startNetworkWatch()
-            
-            const response = await accountService.getCustomData( { path: '/compareVersionAdmin', param: { platform: device.platform == 'ios' ? 'IOS' : 'ANDROID', version: this._packVersion } });
-
-            if (response.error)
-                this._errorVersion = true
-            else
-                this._actVersion = response
+            //TODO
+            //const response = await accountService.getCustomData( { path: '/compareVersionAdmin', param: { platform: device.platform === 'ios' ? 'IOS' : 'ANDROID', version: this._packVersion } });
+            // if (response.error)
+            //     this._errorVersion = true
+            // else
+            //     this._actVersion = response
 
             this._checkVersion = false
         },
         async globalDispatcher ( item: any ) {
             log('globalDispatcher', item)
+            //TODO
             // await dispatch('mainmenu/setProgress', item, {root: true})
             // await dispatch('trips/updateItem', item, {root: true})
             // await dispatch('nav/updateNavPoint', item, {root: true})
@@ -517,61 +516,116 @@ export const useAccountStore = defineStore('accountStore', {
         async init( ) {
             try {
                 const domain: any = await LocalStorage.getItem('domain')
-                await accountService.setDomain( domain )
+                //await accountService.setDomain( domain )
                 this._domain = domain || {}
-                return true;
-            }
-            catch(err) {
+            } catch (err) {
                 this._domain = {}
                 LocalStorage.remove('domain');
-                return false;
             }
         },
         async login( data: any ) {
-
-            let response        = await accountService.login( data );
-
-            if (!_.get(response, 'session', null)){
-                return;
-            }else {
-                this._loggedIn = true;
-                //this._user = user
-            }
             //TODO
-            // commit( 'sessionId', _.get(response, 'session', null) )
-            // commit( 'setBeifahrer', _.get(response, 'user', null) )
-            // commit( 'setFahrer', _.get(response, 'fahrer', null) )
-            // commit( 'setVersion', _.get(response, 'version', null) )
+            //const response        = await accountService.login( data );
+            log(data)
+            const response: any = {}
+            if (!response?.session) {
+                return;
+            } else {
+                this._loggedIn = true;
+            }
+            
+            this._sessionId = response.session || null
+            this._beifahrer = response.user || null
+            this._fahrer = response.fahrer || null
+            this._version = response.version || null
+        },
+        loginFailure( ) {
+            this._loggedIn              = false
+            this._user                  = null
+            this._geolocationWatchId    = ''
+            this._device                = {}
+            this._version               = null
+            this._sessionId             = null
+            this._domain                = {}
+            this._user                  = null
+            this._fahrer                = null
+            this._beifahrer             = null
+            this._title                 = 'dispolive'
+            this._navigationItems       = []
+            this._timer                 = null
+            this._secondHeader          = {}
+            this._searchContacts        = ''
+            this._geoPos                = { 
+                car: '',
+                timestamp: 0,
+                sessionID: '',
+                coords: {
+                    longitude:  null,
+                    latitude:   null
+                }
+            }
+            this._actVersion            = false
+            this._checkVersion          = false
+            this._sendAppCarNote        = {}
+            this._darkMode              = LocalStorage.getItem('darkmode') || false
+            this._navApps               = []
+            this._standartNavigation    = {
+                name: '',
+                scheme: ''
+            }
         },
         async logout() {
             //TODO
-            // const sessionID = this._sessionId + '';
+            //const sessionID = this._sessionId;
+            //TODO
+            useNavStore()
+            //const navStore = useNavStore();
+            //const { data } = storeToRefs(navStore);
+            //const   trips = data.value
 
-            // const   store = useStore(),
-            //         trips = rootGetters['nav/item'];
-
+            //TODO
             // trips.forEach( (trip: any) => {
             //     dispatch( `${trip.item._id}/removeAcceptItem`, trip.item, { root: true } );
             //     store.value.unregisterModule( trip.item._id );
             //     // dispatch( 'setSelectedNavPoint', navigation[0]);
             // });
 
-            // Network.removeAllListeners();
+            Network.removeAllListeners();
 
-            // dispatch('caritemlist/clearData', {}, {root:true});
-            // dispatch('fahrzeuge/clearData', {}, {root:true});
-            // dispatch('trip/clearData', {}, {root:true});
-            // dispatch('socket/remove', {}, {root:true});
-            // dispatch('trips/clearData', {}, {root:true});
-            // dispatch('dienstplan/remove', {}, {root: true} )
-            // dispatch('audit/setSendDataActive', false, {root: true} )
-            // dispatch('audio/unload', null, { root: true })
-            // dispatch('messages/deleteIndex', null, { root: true })
-            // dispatch('messages/remove', null, { root: true })
-            // Geolocation.clearWatch({ id: state.geolocationWatchId});
-            // BackgroundGeolocation.stop();  
-            // commit('loginFailure');
-            // await accountService.logout( { rootGetters, sessionID } );
+            const inventarStore = useInventarStore();
+            inventarStore.clearData();
+
+            const fahrzeugeStore = useFahrzeugeStore();
+            fahrzeugeStore.clearData();
+
+            const fahrberichtStore = useFahrberichtStore();
+            fahrberichtStore.clearData();
+
+            const socketStore = useSocketStore();
+            socketStore.remove();
+
+            const fahrberichteStore = useFahrberichteStore();
+            fahrberichteStore.clearData();
+
+            const dienstplanStore = useDienstplanStore();
+            dienstplanStore.remove();
+
+            const auditStore = useAuditStore();
+            auditStore.setSendDataActive();
+
+            const audioStore = useAudioStore();
+            audioStore.unload();
+
+            const messengerStore = useMessengerStore();
+            messengerStore.deleteIndex();
+            messengerStore.remove();
+
+            //TODO
+            //BackgroundGeolocation.stop();  
+            this.loginFailure();
+
+            //TODO
+            //await accountService.logout( { rootGetters, sessionID } );
         },
         // set fahrer
         setFahrer( fahrer: any ) {

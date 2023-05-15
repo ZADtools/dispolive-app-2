@@ -94,6 +94,8 @@ module.exports = {
     'vue/no-reserved-component-names': 'off',
     'key-spacing': 'off',
     'spaced-comment': 'off',
+    '@typescript-eslint/no-explicit-any': 'off',
+    'vue/multi-word-component-names': 'off',
 
 
     // The core 'import/named' rules
