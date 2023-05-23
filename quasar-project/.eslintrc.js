@@ -96,6 +96,8 @@ module.exports = {
     'spaced-comment': 'off',
     '@typescript-eslint/no-explicit-any': 'off',
     'vue/multi-word-component-names': 'off',
+    '@typescript-eslint/no-unused-vars': 'off',
+    '@typescript-eslint/no-empty-function': 'off',
 
 
     // The core 'import/named' rules

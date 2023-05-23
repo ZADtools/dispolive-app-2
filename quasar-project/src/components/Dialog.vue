@@ -1,8 +1,8 @@
 <template>
     <q-dialog
-        v-if="value"
-        :value="value"
-        @input="$emit('input', $event)"
+        v-if="modelValue"
+        :modelValue="modelValue"
+        @update:model-value="$emit('update:modelValue', $event)"
         persistent
         transition-show="jump-right"
         transition-hide="jump-right">
@@ -39,7 +39,7 @@ const props = defineProps({
         default: 'Achtung'
     },
     text: String,
-    value: {
+    modelValue: {
         type: Boolean
     },
     type: {

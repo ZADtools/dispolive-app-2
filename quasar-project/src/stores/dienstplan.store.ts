@@ -2,6 +2,7 @@ import { defineStore }                  from 'pinia';
 import Debug                            from 'debug';   
 import { IUser }                        from './account.store';
 import { IFahrbericht }                 from './menu.store';
+import { accountService }               from 'src/services/account.service';
 
 const log       = Debug('app:dienstpaln.module');
 
@@ -34,6 +35,23 @@ export const useDienstplanStore = defineStore('dienstplanStore', {
         setPers( pers: string ) {
             this._pers = pers;
         },
+        remove ( ) {
+            this._data = [];
+        },
+        groupBy (array: any, key: string) {
+            const result: any =  {}
+        
+            array.forEach((item: any) => {
+                const group = item[key];
+        
+                if (!result[group])
+                    result[group] = [];
+        
+                result[group].push(item);
+            });
+        
+            return result;
+        },
         async getData( mitarbeiter: IUser ) {
             log( 'getData' );
 
@@ -45,13 +63,11 @@ export const useDienstplanStore = defineStore('dienstplanStore', {
             log(param)
             
             try {
-                //TODO
-                // let data: any     = await accountService.getDataSocket( { rootGetters, event: 'getBesatzungsplan', param } );
+                const data: any     = await accountService.getDataSocket( { event: 'getBesatzungsplan', param } );
 
-                // const groupeData = _.groupBy(data, 'formatStart');
+                const groupeData = this.groupBy(data, 'formatStart');
     
-                // commit( 'setData', groupeData );
-
+                this._data = groupeData || [];
             } catch (error) {
                 log( 'Error getData', error );
                 this._data = [];

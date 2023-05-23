@@ -1,11 +1,12 @@
-import { defineStore, storeToRefs } from 'pinia';
+import { defineStore, storeToRefs }                 from 'pinia';
 import { Network }                                  from '@capacitor/network';
 import { Device }                                   from '@capacitor/device';
 import { AppLauncher }                              from '@capacitor/app-launcher';
 import { StatusBar, Style }                         from '@capacitor/status-bar';
+import { Keyboard }                                 from '@capacitor/keyboard';
 import debug                                        from 'debug';
 import { LocalStorage, openURL, Notify, Dark }      from 'quasar'
-//import { accountService }                           from '../services/account.service';
+import { accountService }                           from '../services/account.service';
 //import BackgroundGeolocation                        from '@transistorsoft/capacitor-background-geolocation';
 import { useFahrberichtStore }                      from './fahrbericht.store';
 import { useNavStore }                              from './nav.store';
@@ -15,11 +16,9 @@ import { useDienstplanStore }                       from './dienstplan.store';
 import { useAudioStore }                            from './audio.store';
 import { useAuditStore }                            from './audit.store';
 import { useMessengerStore }                        from './messenger.store';
-import { Keyboard }                                 from '@capacitor/keyboard';
 import { useSocketStore }                           from './socket.store';
 import { version }                                  from '../../package.json';
 import { useFahrzeugeStore }                        from './fahrzeuge.store';
-
 const log                                           = debug('app:account.module');
 
 export interface IDevice {
@@ -50,6 +49,7 @@ export interface IUser {
     type:               string;
     updateTime:         string;
     firma:              Array<string>;
+    persId:             string;
 }
 
 export interface INavigationItem {
@@ -87,14 +87,11 @@ export interface IAccountState {
     _fahrer:             IUser | null;
     _beifahrer:          IUser | null;
     _navigationItems:    Array<INavigationItem>
-    _timer:              string | null;
-    _secondHeader:       any;
-    _searchContacts:     string;
+    _secondHeader:       string | null;
     _geoPos:             IGeoPos;
     _actVersion:         boolean;
     _checkVersion:       boolean;
     _connected:          boolean;
-    _sendAppCarNote:     any;
     _darkMode:           boolean | 'auto';
     _navApps:            any;
     _standartNavigation: any;
@@ -105,12 +102,15 @@ export interface IAccountState {
     _callDialog:         boolean;
     _errorVersion:       boolean;
     _packVersion:        string;
+    _appCarNote:         any;
+    _progressBarLoad:    boolean;
 }
 
 export const useAccountStore = defineStore('accountStore', {
     state: (): IAccountState => ({
         _geolocationWatchId: '',
         _device:             {},
+        _appCarNote:         {},
         _version:            null,
         _packVersion:        version,
         _loggedIn:           false,
@@ -121,9 +121,7 @@ export const useAccountStore = defineStore('accountStore', {
         _beifahrer:          null,
         _title:              'dispolive',
         _navigationItems:    [],
-        _timer:              null,
-        _secondHeader:       {},
-        _searchContacts:     '',
+        _secondHeader:       null,
         _pauseDialog:        false,
         _geoPos:             { 
             car:        '',
@@ -137,7 +135,6 @@ export const useAccountStore = defineStore('accountStore', {
         _actVersion:         false,
         _checkVersion:       false,
         _connected:          false,
-        _sendAppCarNote:     {},
         _darkMode:           LocalStorage.getItem('darkmode') || false,
         _navApps:            [],
         _standartNavigation: {
@@ -148,26 +145,26 @@ export const useAccountStore = defineStore('accountStore', {
         _appInForeground:    true,
         _lockDevice:         false,
         _callDialog:         false,
-        _errorVersion:       false
+        _errorVersion:       false,
+        _progressBarLoad:    false
     }),
     getters: {
         device:             state => state._device,
         domain:             state => state._domain,
+        appCarNote:         state => state._appCarNote,
         user:               state => state._user || {},
         beifahrer:          state => state._beifahrer,
-        fahrer:             state => state._fahrer || {},
+        fahrer:             state => state._fahrer,
         sessionId:          state => state._sessionId,
         loggedIn:           state => state._loggedIn,
         title:              state => state._title,
         navigationItems:    state => state._navigationItems,
         timer:              state => state._timer,
         secondHeader:       state => state._secondHeader,
-        searchContacts:     state => state._searchContacts,
         geoPos:             state => state._geoPos,
         actVersion:         state => state._actVersion,
         checkVersion:       state => state._checkVersion,
         connected:          state => state._connected,
-        sendAppCarNote:     state => state._sendAppCarNote,
         darkMode:           state => state._darkMode,
         navApps:            state => state._navApps,
         standartNavigation: state => state._standartNavigation,
@@ -178,6 +175,7 @@ export const useAccountStore = defineStore('accountStore', {
         callDialog:         state => state._callDialog,
         errorVersion:       state => state._errorVersion,
         version:            state => state._version,
+        progressBarLoad:    state => state._progressBarLoad,
     },
     actions: {
         setPauseDialog ( value: boolean ) {
@@ -244,20 +242,22 @@ export const useAccountStore = defineStore('accountStore', {
                 openURL(`${this._device.platform === 'ios' ? 'here-route://mylocation/' : 'here-route://mylocation/'}${target}` )
             }
         },
-        async setDarkMode( status: boolean ) {
+        async setStatusbarColor( status: boolean ) {
+            if ( status ) {
+                await StatusBar.setStyle({ style: Style.Dark });
+            } else
+                await StatusBar.setStyle({ style: Style.Light });
+        },
+        setDarkMode( status: boolean ) {
             Dark.toggle();
             this._darkMode = Dark.mode;
             LocalStorage.set('darkmode', Dark.mode)
-
-            if ( status || this._device.platform === 'ios' ) {
-                await StatusBar.setStyle({ style: Style.Default });
-            } else
-                await StatusBar.setStyle({ style: Style.Default });
+            this.setStatusbarColor( status );
         },
         setStandartNavigation( ) {
             this._standartNavigation = LocalStorage.getItem('navigation') || '';
         },
-        async checkkNavigationApps( ) {
+        async checkNavigationApps( ) {
             const googlemaps    = await AppLauncher.canOpenUrl({ url: this._device.platform === 'ios' ? 'comgooglemaps://' : 'com.google.android.apps.maps' });
             const here          = await AppLauncher.canOpenUrl({ url: this._device.platform === 'ios' ? 'here-route://' : 'com.here.app.maps' });
             const applemaps     = await AppLauncher.canOpenUrl({ url: 'mapitem://' });
@@ -455,25 +455,29 @@ export const useAccountStore = defineStore('accountStore', {
                 }
 
                 this._geoPos = cord;
-                const socketStore = useSocketStore();
-
-                socketStore.io.emit( 'getCarPos', cord )
+                //TODO
+                //const socketStore = useSocketStore();
+                //socketStore.io.emit( 'getCarPos', cord )
             }
         },
         async getLocationNow( ) {
+            log('test')
             //TODO
             //const location = await BackgroundGeolocation.getCurrentPosition({});
             //this.sendCoords(location)
         },
         sendAppCarNote( data: { text: string, car: string  } ) {
+            log('test', data)
             const fahrzeugeStore = useFahrzeugeStore();
             const { item: car } = storeToRefs(fahrzeugeStore);
             if ( car.value?._id === data.car )
-                this._sendAppCarNote = data
+                this._appCarNote = data
         },
         msgRead( data: any ) {
-            const socketStore = useSocketStore();
-            socketStore.io.emit( 'msgRead', data )
+            log('test')
+            //TODO
+            // const socketStore = useSocketStore();
+            // socketStore.io.emit( 'msgRead', data )
         },
         async startNetworkWatch( ) {
             const stat = await Network.getStatus();
@@ -494,12 +498,11 @@ export const useAccountStore = defineStore('accountStore', {
             this._checkVersion = true
             this._errorVersion = false
             this.startNetworkWatch()
-            //TODO
-            //const response = await accountService.getCustomData( { path: '/compareVersionAdmin', param: { platform: device.platform === 'ios' ? 'IOS' : 'ANDROID', version: this._packVersion } });
-            // if (response.error)
-            //     this._errorVersion = true
-            // else
-            //     this._actVersion = response
+            const response = await accountService.getCustomData( { path: '/compareVersionAdmin', param: { platform: device.platform === 'ios' ? 'IOS' : 'ANDROID', version: this._packVersion } });
+            if (response.error)
+                this._errorVersion = true
+            else
+                this._actVersion = response
 
             this._checkVersion = false
         },
@@ -515,8 +518,8 @@ export const useAccountStore = defineStore('accountStore', {
         },
         async init( ) {
             try {
-                const domain: any = await LocalStorage.getItem('domain')
-                //await accountService.setDomain( domain )
+                const domain: string | null = await LocalStorage.getItem('domain')
+                await accountService.setDomain( domain || '' )
                 this._domain = domain || {}
             } catch (err) {
                 this._domain = {}
@@ -524,10 +527,8 @@ export const useAccountStore = defineStore('accountStore', {
             }
         },
         async login( data: any ) {
-            //TODO
-            //const response        = await accountService.login( data );
-            log(data)
-            const response: any = {}
+            const response        = await accountService.login( data );
+
             if (!response?.session) {
                 return;
             } else {
@@ -554,7 +555,6 @@ export const useAccountStore = defineStore('accountStore', {
             this._navigationItems       = []
             this._timer                 = null
             this._secondHeader          = {}
-            this._searchContacts        = ''
             this._geoPos                = { 
                 car: '',
                 timestamp: 0,
@@ -566,7 +566,7 @@ export const useAccountStore = defineStore('accountStore', {
             }
             this._actVersion            = false
             this._checkVersion          = false
-            this._sendAppCarNote        = {}
+            this._appCarNote            = {}
             this._darkMode              = LocalStorage.getItem('darkmode') || false
             this._navApps               = []
             this._standartNavigation    = {
@@ -575,23 +575,18 @@ export const useAccountStore = defineStore('accountStore', {
             }
         },
         async logout() {
-            //TODO
-            //const sessionID = this._sessionId;
-            //TODO
-            useNavStore()
-            //const navStore = useNavStore();
-            //const { data } = storeToRefs(navStore);
-            //const   trips = data.value
+            const navStore = useNavStore();
+            const { data } = storeToRefs(navStore);
+            const   trips = data.value
 
-            //TODO
+            // TODO
             // trips.forEach( (trip: any) => {
             //     dispatch( `${trip.item._id}/removeAcceptItem`, trip.item, { root: true } );
             //     store.value.unregisterModule( trip.item._id );
             //     // dispatch( 'setSelectedNavPoint', navigation[0]);
             // });
-
-            Network.removeAllListeners();
-
+            //Network.removeAllListeners();
+            
             const inventarStore = useInventarStore();
             inventarStore.clearData();
 
@@ -600,10 +595,7 @@ export const useAccountStore = defineStore('accountStore', {
 
             const fahrberichtStore = useFahrberichtStore();
             fahrberichtStore.clearData();
-
-            const socketStore = useSocketStore();
-            socketStore.remove();
-
+            
             const fahrberichteStore = useFahrberichteStore();
             fahrberichteStore.clearData();
 
@@ -611,8 +603,8 @@ export const useAccountStore = defineStore('accountStore', {
             dienstplanStore.remove();
 
             const auditStore = useAuditStore();
-            auditStore.setSendDataActive();
-
+            auditStore._sendDataActive = false;
+            
             const audioStore = useAudioStore();
             audioStore.unload();
 
@@ -622,10 +614,10 @@ export const useAccountStore = defineStore('accountStore', {
 
             //TODO
             //BackgroundGeolocation.stop();  
+            await accountService.logout( { sessionID: this._sessionId } );
+            const socketStore = useSocketStore();
+            socketStore.remove();
             this.loginFailure();
-
-            //TODO
-            //await accountService.logout( { rootGetters, sessionID } );
         },
         // set fahrer
         setFahrer( fahrer: any ) {
@@ -646,18 +638,9 @@ export const useAccountStore = defineStore('accountStore', {
             this._title = title;
         },
 
-        // set timer desinfektionsprotokoll
-        setTimer( time: string ) {
-            this._timer = time;
-        },
-
         // set secondHeader
         setSecondHeader( link: string ) {
             this._secondHeader = link;
-        },
-        // set secondHeader
-        setSearchContacts( search: string ) {
-            this._searchContacts = search;
-        },
+        }
     },
 });

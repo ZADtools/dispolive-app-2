@@ -2,7 +2,7 @@
     <div>
         <q-item clickable @click="item.submenu !== 'forTrips' ? clicked(item) : ''" :class="[ selectedMenuPoint(item), 'overflow-hidden', 'text-no-wrap', 'menu-item', 'bg-grey-1']">
             <q-item-section avatar :class="['menu-item-section', item.menuType == 'sub' ? 'subMenu': '', item.submenu == 'forTrips' && navItems.length > 0 ? 'bg-primary' : iconColor, textColor]" >
-                <q-icon :name="getStatus.status == 'pause' && item.title == 'Pausieren' ? item.activeIcon : item.icon" />
+                <q-icon :name="getStatus.status === 'pause' && item.title === 'Pausieren' ? item.activeIcon : item.icon" />
             </q-item-section>
 
             <q-item-section>
@@ -13,7 +13,7 @@
                 >
                     {{ item.title }} 
                     <span class="text-bold" v-if="item.title === 'Pausieren' && pauseTime">{{ `(${pauseTime})` }}</span> 
-                    <span class="text-bold" v-if="item.title === 'Desinfektion' && desiTimer && desiTimer !== '00:00'">{{ `(${desiTimer})` }}</span> 
+                    <span class="text-bold" v-if="item.title === 'Desinfektion' && diffTime">{{ `(${diffTime})` }}</span> 
                     <q-badge v-if="item.title == 'Messenger' && unread" align="top" color="negative">{{unread}}</q-badge>
                 </q-item-label>
                 <q-linear-progress style="margin-left: 0px; margin-top: -10px; position:absolute; z-index: 0; width: 233px" size="70px" v-if="item.menuType == 'sub'" :color="setProgressColor(item.item)" :value="progress[item.item._id]" />
@@ -24,16 +24,87 @@
         <div v-if="item.submenu == 'forTrips'">
             <MenuLink v-for="subitem in navItems" :key="subitem._id" :item="subitem" />
         </div>
+        <Dialog v-if="noSpecialRightsAllowed" text="Während eines Linientransports können keine Sonderrechte gesetzt werden!" :value="modelValue" okLabel="Abbrechen" :abortShow="false" @update:modelValue="(val) => noSpecialRightsAllowed = val"  />
+        <Dialog v-if="specialrightDialog" :text="specialRightsDiaText" :modelValue="specialrightDialog" okLabel="Ok" :abortShow="false" @update:modelValue="($event) => specialrightDialog = $event"  />
+        <q-dialog
+            v-model="confirmSpecialRights"
+            persistent
+            transition-show="jump-right"
+            transition-hide="jump-right">
+            <q-card class="bg-white" style="width: 700px;">
+                <q-bar class="q-pa-lg text-h6 text-white bg-primary">
+                    Sonderrechte
+                </q-bar>
+                <q-form greedy no-error-focus ref="specialRightsForm">
+                    <div class="row q-px-xl q-py-sm" v-if="navItems.length > 1">
+                        <div class="col-12">
+                            <q-select 
+                                filled 
+                                use-chips
+                                v-model="selectedFahrten" 
+                                :options="navItems" 
+                                label="Fahrten..."
+                                emit-value
+                                map-options
+                                multiple
+                                :rules="[ val => val.length > 0 || 'Bitte wählen Sie mindestens 1 Fahrt aus' ]"
+                            >
+                                <template v-slot:option="scope">
+                                    <q-item
+                                        v-if="scope.opt.item.type !== 'Linie'"
+                                        v-bind="scope.itemProps"
+                                        v-on="scope.itemEvents">
+                                        <q-item-section >
+                                            <q-item-label class="text-body1"> {{scope.opt.patSurname}} {{scope.opt.patName}} <span class="text-negative">{{scope.opt.sonderrechte ? '(bereits eingeschaltet)' : ''}}</span></q-item-label>
+                                        </q-item-section>
+                                    </q-item>
+                                </template>
+                                <template v-slot:selected-item="scope">
+                                    <q-chip
+                                        @remove="scope.removeAtIndex(scope.index)"
+                                        v-bind="scope.itemProps"
+                                        v-on="scope.itemEvents"
+                                        removable>
+                                        {{scope.opt.patSurname}} {{scope.opt.patName}}
+                                        
+                                    </q-chip>
+                                </template>
+                            </q-select>
+                        </div>
+                    </div>
+                    <div class="row q-px-xl q-py-sm">
+                        <div class="col-12">
+                            <q-input inputmode="text" type="textarea" filled label-color="primary" autogrow v-model="specialRightText" label="S. Bemerkung"/>
+                        </div>
+                    </div>
+                    <q-separator />
+                    <q-card-actions class="row q-px-lg q-py-sm bg-grey-3">
+                        <div class="col-6 q-px-sm">
+                            <q-btn class="full-width text-body1" padding="6px" color="negative" v-close-popup label="Abbrechen" />
+                        </div>
+                        <div class="col-6 q-px-sm">
+                            <q-btn class="full-width text-body1" padding="6px" color="primary" @click="setSpecialRights()" label="Einschalten" />
+                        </div>
+                    </q-card-actions>
+                </q-form>
+            </q-card>
+        </q-dialog>
     </div>
 </template>
 
 <script lang="ts" setup>
 import { ref}                                               from 'vue';
 import debug                                                from 'debug';
+import Dialog                                               from 'src/components/Dialog.vue';
 import { useNavStore }                                      from 'src/stores/nav.store';
 import { useAccountStore }                                  from 'src/stores/account.store';
-import { useMenuStore }                                     from 'src/stores/menu.store';
+import { useMenuStore, IFahrbericht }                       from 'src/stores/menu.store';
 import { useMessengerStore }                                from 'src/stores/messenger.store';
+import { useFahrberichtStore }                              from 'src/stores/fahrbericht.store'
+import { useFahrzeugeStore }                                from 'src/stores/fahrzeuge.store';
+import { useAuditStore }                                    from 'src/stores/audit.store';
+import { useDesiprotokolleStore }                           from 'src/stores/desiprotokolle.store';
+import { useRouter }                                        from 'vue-router';
 import { storeToRefs }                                      from 'pinia';
 
 const log                                                   = debug('app:MenuLink');
@@ -50,6 +121,16 @@ const { item: getStatus, pauseTime, progress } = storeToRefs(menuStore);
 const messengerStore = useMessengerStore();
 const { unread } = storeToRefs(messengerStore);
 
+const fahrzeugeStore = useFahrzeugeStore();
+const { item: selectedCar } = storeToRefs(fahrzeugeStore);
+
+const desiprotokolleStore = useDesiprotokolleStore();
+const { diffTime } = storeToRefs(desiprotokolleStore);
+
+const auditStore = useAuditStore();
+const fahrberichtStore = useFahrberichtStore();
+const router = useRouter();
+
 const props = defineProps({
     item: {
         type:       Object,
@@ -62,7 +143,14 @@ const props = defineProps({
 const   iconColor               = ref('bg-grey-1'),
         textColor               = ref('text-grey-1'),
         bM                      = ref(''),
-        tM                      = ref('');
+        tM                      = ref(''),
+        specialRightText        = ref(''),
+        specialRightsDiaText    = ref(''),
+        selectedFahrten         = ref<Array<IFahrbericht>>([]),
+        specialrightDialog      = ref(false),
+        confirmSpecialRights    = ref(false),
+        specialRightsForm       = ref(),
+        noSpecialRightsAllowed  = ref(false);
 
 if (props.item.color) {
     iconColor.value         = `bg-${props.item.color}`;
@@ -86,6 +174,32 @@ function setProgressColor (item: any) {
     return progress.value[item._id] >= 1 ? color : 'red-3'
 }
 
+function setSpecialRights () {
+    specialRightsForm.value.validate().then( async (success: boolean) => {
+        if ( success && selectedCar.value ) {
+            confirmSpecialRights.value = false;
+
+            for ( const fb of selectedFahrten.value ) {
+                const data = {
+                    _id:            fb._id,
+                    car:            selectedCar.value._id,
+                    sonderrechte:   1,
+                    status:         'sonderrechte'
+                }
+
+                const sonderBemerkung = {
+                    _id:                fb._id,
+                    sonderBemerkung:    specialRightText.value
+                }
+    
+                await auditStore.setItem({ type:'zeitstempel', value: data });
+                await auditStore.setItem({ type:'sonderNotice', value: sonderBemerkung, noAlert: true });
+                await menuStore.setStatus({status: 'sonderrechte'});   
+            }
+        }
+    } )
+}
+
 function selectedMenuPoint ( item: any ) {
     let exists = getTitle.value === item.title;
 
@@ -95,9 +209,101 @@ function selectedMenuPoint ( item: any ) {
     return exists ? 'selected' : 'notSelected';
 }
 
-function clicked( item: any ) {
-    log('clicked', item)
+async function specialrights () {
+    specialRightText.value = '';
+
+    if (navItems.value.length === 0) {
+        specialRightsDiaText.value  = 'Sonderrechte können nur während einer aktiven Fahrt gesetzt werden!'
+        specialrightDialog.value    = true;
+        return 
+    }
+
+    if (navItems.value.length === 1 && navItems.value[0].item.type === 'Linie') {
+        specialRightsDiaText.value  = 'Sonderrechte können nicht für eine Linie eingeschaltet werden!'
+        specialrightDialog.value    = true;
+        return 
+    }
+
+    if (navItems.value.length === 1 && navItems.value[0].item.sonderrechte) {
+        specialRightsDiaText.value  = 'Für diese Fahrt wurden bereits Sonderrechte eingeschaltet'
+        specialrightDialog.value    = true;
+        return 
+    }
+
+    if (navItems.value.length > 1 ) {
+        specialRightsDiaText.value  = 'Sonderrechte können nicht gesetzt werden, wenn 2 oder mehr Fahrten angenommen wurden.'
+        specialrightDialog.value    = true;
+        return 
+    }
+
+    selectedFahrten.value = [];
+
+    const selectedLinie = false;
+
+    if ( navItems.value.length === 1 ) {
+        //TODO
+        // if (!selectedFahrten.value.sonderrechte && !selectedFahrten.value.type !== 'Linie')
+        //     selectedFahrten.value.push(navItems.value[0].item);
+
+        // if ( selectedFahrten.value.type === 'Linie' )
+        //     selectedLinie = true;
+    } else {
+        //TODO
+        // navItems.value.every( item => {
+        //     if ( selectedFahrten.value.type === 'Linie' ) {
+        //         selectedLinie = true;
+        //         return false;
+        //     }
+
+        //     if (item.item && !item.item.sonderrechte && item.item.type !== 'Linie')
+        //         selectedFahrten.value.push(item.item);
+
+        //     return true;
+        // } )
+    }
+
+    if (selectedLinie)
+        noSpecialRightsAllowed.value = true;
+
+    if (navItems.value.length === 1 && !selectedLinie) {
+        confirmSpecialRights.value = true;
+    }
+}
+
+async function clicked( item: any ) {
     navStore.setSelected( item )
+
+    if (item.item && item.item._id)
+        fahrberichtStore.setActTrip( item.item );
+
+    // if (item.title && !item.function && item.title !== 'Logout')
+    //     accountStore.setTitle( item.title );
+
+    if (item.function) {
+        if ( item.function === 'specialrights' )
+            specialrights()
+
+        if ( item.function === 'pause' ) {
+            const stat = await menuStore.setStatus({status: 'pause'});
+            if (stat && stat.error) {
+                accountStore.setPauseDialog(true)
+            }
+        }
+
+        return true;
+    }
+
+    if (item.link)
+        switch ( item.link) {
+            case 'logout':
+                //TODO
+                //logoutDialog.value = true;
+                break;
+            default:
+                console.log('nav link', item.link)
+                router.push( `/app/${item.link}` )
+                break;
+        }
 }
 
 function setLabelTextColor(item: any) {

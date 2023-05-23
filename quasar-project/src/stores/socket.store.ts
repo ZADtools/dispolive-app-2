@@ -4,7 +4,7 @@ import { useAccountStore }                  from './account.store';
 import { useMenuStore }                     from './menu.store';
 import { useMessengerStore }                from './messenger.store';
 import { useFahrberichteStore }             from './fahrberichte.store';
-import { sock1 }                            from '@w4b/socket-1';
+import io                                   from 'socket.io-client';
 import { ISocket4, sock4 }                  from '@w4b/socket-4';
 import { App }                              from '@capacitor/app';
 import { LocalNotifications }               from '@capacitor/local-notifications';
@@ -31,8 +31,8 @@ export const useSocketStore = defineStore('socketStore', {
     },
     actions: {
         async remove( ) {
-            log('remove', sockHdl)
-            sockHdl = await sockHdl.removeListener();
+            log('remove')
+            sockHdl = await sockHdl.off();
             sockHdl = null;
             log('remove done', sockHdl)
             this._connected = false;
@@ -41,17 +41,19 @@ export const useSocketStore = defineStore('socketStore', {
         async init( ) {
             const accountStore  = useAccountStore();
             const { version: accVersion, domain: accDomain, device } = storeToRefs(accountStore);
-
+            
             const menuStore     = useMenuStore();
             const { item } = storeToRefs(menuStore);
-
+           
             sockHdl = null;
             const version       = accVersion.value ? accVersion.value.split('.')[0] : 'X';
-
+          
             const domain = `https://${accDomain.value}.dispolive.de`
-
+            //TODO
             //switch here between different socket versions
-            sockHdl   = version >= '6' ? await sock4.init(domain) : await sock1.init(domain);
+            //sockHdl   = version >= '6' ? await sock4.init(domain) : await sock1.init(domain);
+
+            sockHdl   = io( `${domain}/app` );
             
             if ( device.value.platform === 'ios' )
                 LocalNotifications.requestPermissions();
@@ -63,11 +65,10 @@ export const useSocketStore = defineStore('socketStore', {
 
             return new Promise( ( resolve, reject) => {
                 try {
-                    log( 'after init', sockHdl );
-
                     sockHdl.on('connect', () => {
+                        console.log('socket connected')
                         this._connected = true;
-
+      
                         const fahrberichteStore = useFahrberichteStore();
                         fahrberichteStore.getChangesFb();
 

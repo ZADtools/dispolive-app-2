@@ -1,5 +1,6 @@
 import { defineStore }  from 'pinia';
 import Debug            from 'debug';
+import { accountService } from 'src/services/account.service';
 
 const log       = Debug('app:fahrzeuge.module');
 export interface IInventarItem {
@@ -38,20 +39,20 @@ export const useInventarStore = defineStore('inventarStore', {
                 return;
 
             try {
-                //TODO
-                // const items: any     = await accountService.getDataSocket( { rootGetters, event: 'getCarFittings', param: { car: carId, app: true } } );
-                
-                // if (items && items.data) {
-                //     let countItems = 0;
+                const items: any = await accountService.getDataSocket( { event: 'getCarFittings', param: { car: carId, app: true } } );
 
-                //     _.forEach(items.data, (items) => {
-                //         countItems += items.length
-                //     })
+                if (items && items.data) {
+                    let countItems = 0;
 
-                //     commit( 'setCountItems', countItems );
-                // }
-                
-                // commit( 'setData', items.data );
+                    for ( const key in items.data ) {
+                        console.log(key)
+                        countItems += items.data[key].length
+                    }
+
+                    this._countItems = countItems;
+
+                    this._data = items.data;
+                }
             } catch (error) {
                 log( 'Error getData', error );
                 this._data = [];
@@ -60,10 +61,8 @@ export const useInventarStore = defineStore('inventarStore', {
         // getData
         async getCount(  ) {
             try {
-                //TODO
-                // const items     = await accountService.getDataSocket( { rootGetters, event: 'fetchInventarCount', param: {} } );
-                // commit( 'setCount', items );
-
+                const items     = await accountService.getDataSocket( { event: 'fetchInventarCount', param: {} } );
+                this._count = items
             } catch (error) {
                 log( 'Error getData', error );
                 this._count = {};

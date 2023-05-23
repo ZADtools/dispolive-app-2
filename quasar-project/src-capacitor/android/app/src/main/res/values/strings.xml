@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">dispolive App</string>
+    <string name="title_activity_main">dispolive App</string>
+    <string name="package_name">capacitor.app.dispolive</string>
+    <string name="custom_url_scheme">capacitor.app.dispolive</string>
+</resources>

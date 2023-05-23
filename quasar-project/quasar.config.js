@@ -43,7 +43,7 @@ module.exports = configure(function (/* ctx */) {
     extras: [
       // 'ionicons-v4',
       // 'mdi-v5',
-      // 'fontawesome-v6',
+      'fontawesome-v6',
       // 'eva-icons',
       // 'themify',
       // 'line-awesome',
@@ -61,6 +61,18 @@ module.exports = configure(function (/* ctx */) {
       },
 
       vueRouterMode: 'hash', // available values: 'hash', 'history'
+      env: {
+        dev: {
+          fahrer:       'cd1',
+          username:     'cd',
+          password:     'IwidF51'
+        },
+        beta: {
+          fahrer:       'fl',
+          username:     'fl',
+          password:     'BDuzzenE64&20'
+        }
+      },
       // vueRouterBase,
       // vueDevtools,
       // vueOptionsAPI: false,
@@ -87,8 +99,30 @@ module.exports = configure(function (/* ctx */) {
 
     // Full list of options: https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#devServer
     devServer: {
-      // https: true
-      open: true // opens browser window automatically
+        https: false,
+        port: 8080,
+        open: false, // opens browser window automatically
+        proxy: {
+          '/socket.io': {
+            target: 'https://dev5.dispolive.de',
+            changeOrigin: true
+          },
+          '/auth': {
+            target: 'https://dev5.dispolive.de',
+            changeOrigin: true,
+            pathRewrite: {
+              '^/auth': ''
+            }
+          },
+          '/custom': {
+            target: 'https://dev5.dispolive.de',
+            changeOrigin: true
+          },
+          '/data': {
+            target: 'https://dev5.dispolive.de',
+            changeOrigin: true
+          }
+        }  
     },
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#framework
@@ -106,7 +140,13 @@ module.exports = configure(function (/* ctx */) {
       // directives: [],
 
       // Quasar plugins
-      plugins: []
+      plugins: [
+          'Platform',
+          'Dialog',
+          'Notify',
+          'LocalStorage',
+          'Loading'
+      ]
     },
 
     // animations: 'all', // --- includes all animations

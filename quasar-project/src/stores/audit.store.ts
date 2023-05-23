@@ -1,12 +1,16 @@
 import { defineStore, storeToRefs }                 from 'pinia';
 import Debug                                        from 'debug';  
 import dayjs                                        from 'dayjs';
+import advancedFormat                               from 'dayjs/plugin/advancedFormat';
 import { openDB }                                   from 'idb';
 import { uid, Notify }                              from 'quasar';
 import { IFahrbericht }                             from './menu.store';
 import { useAccountStore }                          from './account.store';
+import { useMessengerStore }                        from './messenger.store';
+import { accountService }                           from 'src/services/account.service'; 
 import { useNavStore }                              from './nav.store';
 
+dayjs.extend(advancedFormat)
 const log       = Debug('app:audit.module');
 
 export interface IAuditItem {
@@ -130,16 +134,17 @@ export const useAuditStore = defineStore('auditStore', {
         async write( data: any ) {
             try {
                 data.item = JSON.parse(data.item);
-                //TODO
-                //const id: any = await accountService.transferItem({ item: data, rootGetters })
+                const id: any = await accountService.transferItem({ item: data })
 
-                // if ( !id.error ) {
-                //     await dispatch('removeItem', id);
-                //     if ( data.type == 'messages' )
-                //         dispatch('messages/setSend', data.item, {root: true})
-                //     return true
-                // }else
-                //     return false
+                if ( !id.error ) {
+                    await this.removeItem(id)
+                    if ( data.type === 'messages' ) {
+                        const messengerStore = useMessengerStore()
+                        messengerStore.setSend(data.item)
+                    }
+                    return true
+                } else
+                    return false
             } catch (err) {
                 log('write', err);
                 this.setSendDataActive(false);
@@ -156,7 +161,7 @@ export const useAuditStore = defineStore('auditStore', {
                     return false
 
                 const data = await this.actionDb({ methode: 'SELECT'})
-        
+
                 if (data)
                     return await this.write( data );
                 else 
@@ -169,7 +174,7 @@ export const useAuditStore = defineStore('auditStore', {
         async sendData ( ) {
             const accountStore = useAccountStore()
             const { connected } = storeToRefs(accountStore)
-            const connect       = connected.value;
+            const connect       = false //connected.value;
 
             if ( !connect )
                 return false
@@ -217,7 +222,7 @@ export const useAuditStore = defineStore('auditStore', {
 
             //set timestamp
             item.timestampIntern = dayjs().format('x');
-            
+
             try {
                 //******HOOOK before DB Update
                 if (item.type === 'sonderNotice') {
@@ -231,7 +236,6 @@ export const useAuditStore = defineStore('auditStore', {
                     item.value.fbId                             = item.value._id;
                 }
                 //******HOOOK Ende
-
                 const data = {...item};
 
                 //******HOOOK delete before DB Update
@@ -327,13 +331,12 @@ export const useAuditStore = defineStore('auditStore', {
             await this.actionDb({item: id, methode: 'DELETE'})
         },
 
-        async sendFile( ) {
+        async sendFile( data: any) {
             log( 'sendFile' );
             
             try {
-                //TODO
-                // const file     = await accountService.transferFile( {path: '/custom/userFiles/userFiles', param: data});
-                // this._file = file
+                const file     = await accountService.transferFile( {path: '/custom/userFiles/userFiles', param: data});
+                this._file = file
                 Notify.create({
                     type: 'positive',
                     message: 'Erfolgreich gespeichert',
@@ -343,7 +346,7 @@ export const useAuditStore = defineStore('auditStore', {
                     color: 'secondary',
                     classes: 'glossy',
                 })
-                //return file.data
+                return file.data
             } catch (error) {
                 log( 'Error sendFile', error );
                 Notify.create({
@@ -355,7 +358,6 @@ export const useAuditStore = defineStore('auditStore', {
                     color: 'negative',
                     classes: 'glossy',
                 })
-                throw error;
             }
         }
     }

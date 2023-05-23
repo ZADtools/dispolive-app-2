@@ -17,7 +17,7 @@ export default function Global() {
         {
             title:      'Fahrten',
             icon:       'fas fa-tasks',
-            link:       'trips',
+            link:       'fahrberichte',
             color:      'grey-5',
             fontColor:  'grey-1',
             bottomMargin: true
@@ -25,7 +25,7 @@ export default function Global() {
         {
             title:      'Angenommene Fahrten',
             icon:       'fas fa-id-card',
-            link:       'tripNow',
+            link:       'fahrbericht',
             color:      'grey-5',
             fontColor:  'grey-1',
             submenu:    'forTrips',
@@ -51,7 +51,7 @@ export default function Global() {
         {
             title:      'Messenger',
             icon:       'fas fa-envelope',
-            link:       'messages',
+            link:       'messenger',
             color:      'secondary',
             fontColor:  'grey-1',
             bottomMargin: true
@@ -74,7 +74,7 @@ export default function Global() {
         {
             title:      'Fahrzeugcheckliste',
             icon:       'fas fa-book',
-            link:       'checklistCar',
+            link:       'inventarIn',
             color:      'amber-4',
             fontColor:  'grey-1',
             bottomMargin: true
@@ -82,7 +82,7 @@ export default function Global() {
         {
             title:      'Dienstplan',
             icon:       'fas fa-list-alt',
-            link:       'checklistEmployee',
+            link:       'dienstplan',
             color:      'grey-5',
             fontColor:  'grey-1',
             bottomMargin: true

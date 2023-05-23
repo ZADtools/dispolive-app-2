@@ -1,16 +1,24 @@
 import { defineStore, storeToRefs }                 from 'pinia';
 import Debug                                        from 'debug';  
-import { useAccountStore }                          from './account.store'; 
+import { useAccountStore, IUser }                   from './account.store'; 
 import { extend }                                   from 'quasar';
 import { useFahrzeugeStore }                        from './fahrzeuge.store';
 import { LocalNotifications }                       from '@capacitor/local-notifications';
+import { accountService }                           from 'src/services/account.service';
+import { useAuditStore }                            from './audit.store';
 
 const log       = Debug('app:messenger.module');
 
 export interface IMessage {
     _id?:            string;
     received:        boolean;
-    note:            string;
+    note?:            string;
+    origNote:        string;
+    date:            string;
+    device:          boolean;
+    car:             string;
+    name:            string;
+    user:            IUser | null;
 }
 
 export interface IMessengerState {
@@ -21,7 +29,6 @@ export interface IMessengerState {
     _scrollEnd:      boolean,
     _lastItem:       string,
     _selectedText:   string,
-    _messengerLoad:  boolean,
     _unread:         number   
 }
 
@@ -34,7 +41,6 @@ export const useMessengerStore = defineStore('messengerStore', {
         _scrollEnd:      false,
         _lastItem:       '',
         _selectedText:   '',
-        _messengerLoad:  false,
         _unread:         0
     }),
     getters: {
@@ -45,7 +51,6 @@ export const useMessengerStore = defineStore('messengerStore', {
         scrollEnd:      state => state._scrollEnd,
         lastItem:       state => state._lastItem,
         selectedText:   state => state._selectedText,
-        messengerLoad:  state => state._messengerLoad,
         unread:         state => state._unread
     },
     actions: {
@@ -53,13 +58,10 @@ export const useMessengerStore = defineStore('messengerStore', {
             log( 'getData' );
             
             try {
-                //TODO
-                // const textbausteine: any     = await accountService.getDataSocket( { rootGetters, event: 'getDefaultCol', param: { col: 'textbausteine', filter:{ app: true } } } );
-
-                // commit( 'setData', textbausteine.data );
+                const textbausteine: any     = await accountService.getDataSocket( { event: 'getDefaultCol', param: { col: 'textbausteine', filter:{ app: true } } } );
+                this._data = textbausteine.data;
             } catch (error) {
                 log( 'Error getData', error );
-                throw error;
             }
         },
         remove( ) {
@@ -68,13 +70,25 @@ export const useMessengerStore = defineStore('messengerStore', {
             this._unread    = 0;
         },
         setMessengerLoad( bool: boolean) {
-            this._messengerLoad = bool
+            const accountStore = useAccountStore();
+            accountStore._progressBarLoad = bool
         },
         setSelectedText( text: string ) {
             this._selectedText = text
         },
         setUnread( count: number ) {
             this._unread = count
+        },
+        setMessages( messages : IMessage[] ) {
+            if ( !this._messages )
+                this._messages = []
+
+            messages.forEach((message: any, index: number) => {
+                this._messages.unshift(message);
+            })
+
+            if ( this._messages && this._messages.length > 0 )
+                this._lastItem = this._messages[this._messages.length - 1]?._id || '';
         },
         setMessage( message: IMessage ) {
             this._messages?.push(message);
@@ -106,9 +120,9 @@ export const useMessengerStore = defineStore('messengerStore', {
                                 _id: message._id
                             }
                         }
-                        log(item)
-                        //TODO
-                        //dispatch('audit/setItem', item, {root: true});
+                        
+                        const auditStore = useAuditStore();
+                        auditStore.setItem(item);
                     }
                 } )
         },   
@@ -122,29 +136,32 @@ export const useMessengerStore = defineStore('messengerStore', {
         },
         async getMessages( { index }: { index: number } ) {
             log( 'getMessages', index);
-            
+            const fahrzeugeStore = useFahrzeugeStore();
+            const { item } = storeToRefs(fahrzeugeStore);
+    
             try {
-                // const messages: any     = await accountService.getDataSocket( { 
-                //     rootGetters, 
-                //     event: 'getDefaultCol', 
-                //     param: { 
-                //         index, 
-                //         col: 'messages', 
-                //         filter:{  
-                //             car: rootGetters['fahrzeuge/item']._id
-                //         } 
-                //     } 
-                // } );
+                const messages: any     = await accountService.getDataSocket( { 
+                    event: 'getDefaultCol', 
+                    param: { 
+                        index, 
+                        col: 'messages', 
+                        filter:{  
+                            car: item.value?._id
+                        } 
+                    } 
+                } );
 
-                // messages.data.forEach( ( message: any ) => {
-                //     message.send = true
-                // } )
+                console.log('11111', messages)
+                if (messages.data)
+                    messages.data.forEach( ( message: any ) => {
+                        message.send = true
+                    } )
 
-                // commit( 'setMessages', messages.data )
-                // commit('setIndex', index)
-                // dispatch('setReceive', messages)
+                this.setMessages( messages.data )
+                this._index = index
+                this.setReceive( messages )
 
-                // return messages
+                return messages
             } catch (error) {
                 log( 'Error getData', error );
                 this._messages = [];
@@ -154,52 +171,52 @@ export const useMessengerStore = defineStore('messengerStore', {
             log( 'getMessagesNow');
             const fahrzeugeStore = useFahrzeugeStore();
             const { item } = storeToRefs(fahrzeugeStore);
-            log(item.value)
+
             const accountStore = useAccountStore();
-            const { secondHeader, device } = storeToRefs(accountStore);
+            const { secondHeader, device, appInForeground } = storeToRefs(accountStore);
 
             if (!data)
                 try {
-                    // if ( item.value?._id ) {
-                    //     const messages: any     = await accountService.getDataSocket( { 
-                    //         rootGetters, 
-                    //         event: 'getDefaultCol', 
-                    //         param: { 
-                    //             col: 'messages', 
-                    //             filter:{  
-                    //                 car: rootGetters['fahrzeuge/item']._id,
-                    //                 received: { $exists: false }
-                    //             } 
-                    //         } 
-                    //     } );
+                    if ( item.value?._id ) {
+                        const messages: any     = await accountService.getDataSocket( { 
+                            event: 'getDefaultCol', 
+                            param: { 
+                                col: 'messages', 
+                                filter:{  
+                                    car: item.value._id,
+                                    received: { $exists: false }
+                                } 
+                            } 
+                        } );
 
-                    //     messages.data.forEach( async ( message: any ) => {
-                    //         message.send = true
-                    //         commit( 'setMessage', message );
-                    //         dispatch('account/sendAppCarNote', message, { root: true });
-                    //         dispatch('setReceive', {data: [message]})
-                    //         console.log('11111111', rootState.account.device)
-                    //         if ( !rootState.account.appInForeground && rootState.account.device.platform === 'ios' )
-                    //             await LocalNotifications.schedule({
-                    //                 notifications: [ 
-                    //                     {
-                    //                         id:     Math.floor(Math.random() * 1000000000),
-                    //                         title:  'Nachricht von Zentrale',
-                    //                         body:   message.note
-                    //                     }
-                    //                 ]
-                    //             });
-                    //     } )
-                        
-                    //     if ( messages && messages.data && messages.data.length > 0 )
-                    //         dispatch( 'audio/play', 'neueNachricht', { root: true } );
-                        
-                    //     if (rootGetters['account/secondHeader'] !== 'messages' && messages.data)
-                    //         commit( 'setUnread', state.unread + messages.data.length )
+                        messages.data.forEach( async ( message: any ) => {
+                            message.send = true
+                            this.setMessage( message )
+                            accountStore.sendAppCarNote(message)
 
-                    //     //dispatch('setReceive', messages)
-                    //     return messages
-                    // }
+                            this.setReceive( { data: [message] } )
+
+                            if ( !appInForeground.value && device.value.platform === 'ios' )
+                                await LocalNotifications.schedule({
+                                    notifications: [ 
+                                        {
+                                            id:     Math.floor(Math.random() * 1000000000),
+                                            title:  'Nachricht von Zentrale',
+                                            body:   message.note
+                                        }
+                                    ]
+                                });
+                        } )
+                        //TODO 
+                        // if ( messages && messages.data && messages.data.length > 0 )
+                        //     dispatch( 'audio/play', 'neueNachricht', { root: true } );
+                        
+                        if (secondHeader.value !== 'messages' && messages.data)
+                        this.setUnread( this._unread + messages.data.length )
+
+                        //dispatch('setReceive', messages)
+                        return messages
+                    }
                 } catch (error) {
                     log( 'Error getData', error );
                     //commit( 'setData', [] );

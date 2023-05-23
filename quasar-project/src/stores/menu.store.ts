@@ -41,6 +41,12 @@ export interface IFahrbericht {
     startLng?:        number;
     targetLat?:       number;
     targetLng?:       number;
+    infektion?:       boolean;
+    desiProt?:        boolean;
+    ausrueckZeit?:    string;
+    zuweisZeit?:      string;
+    startTimeBis?:    string;
+    sonderrechte?:    boolean;
 }
 
 export interface IMenuState {
@@ -145,7 +151,7 @@ export const useMenuStore = defineStore('menuStore', {
             const { sessionId, fahrer, beifahrer }     = storeToRefs(accountStore);
 
             const navStore          = useNavStore();
-            const { item: navItem } = storeToRefs(navStore);
+            const { data: navItem } = storeToRefs(navStore);
 
             if ( !item.value?._id)
                 return {error: 'noCar'}
@@ -159,9 +165,9 @@ export const useMenuStore = defineStore('menuStore', {
             if (status !== 'zielBegin' && status !== 'sonderrechte' && status !== 'pause' && navItem.value.length  === 0) {
                 status = 'frei';
             }
-
-            if (status !== 'zielBegin' && status !== 'sonderrechte' && status !== 'pause' && status === 'pause' && this._item.status === 'pause')
-                status = 'frei';
+            //TODO
+            // if (status !== 'zielBegin' && status !== 'sonderrechte' && status !== 'pause' && status === 'pause' && this._item.status === 'pause')
+            //     status = 'frei';
             
             if ( status === 'logout' )
                 status = '';
@@ -169,9 +175,9 @@ export const useMenuStore = defineStore('menuStore', {
             if ( status === 'pause' ) {
                 const stempel = {
                     _id:        uid(),
-                    fahrer,
-                    beifahrer,
-                    car:        item,
+                    fahrer:     fahrer.value,
+                    beifahrer:  beifahrer.value,
+                    car:        item.value,
                     date:       dayjs().format('YYYY-MM-DD'),
                     time:       dayjs().format('HH:mm'),
                     pause:      status === 'pause' && this._item.status === 'pause'

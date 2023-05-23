@@ -1,10 +1,11 @@
 import { defineStore, storeToRefs }     from 'pinia';
 import Debug                            from 'debug';   
 import dayjs                            from 'dayjs';
-import { IFahrbericht }                 from './menu.store';
+import { useMenuStore, IFahrbericht }                 from './menu.store';
 import { useFahrberichtStore }          from './fahrbericht.store';
 import { useAuditStore }                from './audit.store';
 import { useFahrzeugeStore }            from './fahrzeuge.store';
+import { accountService }               from 'src/services/account.service';
 
 const log       = Debug('app:fahrberichte.module');
 
@@ -13,6 +14,7 @@ export interface IFahrberichteState {
     _actDay:         string;
     _previewFb:      boolean;
     _lastDeletedItem: string;
+    _selectedDay:      string;
 }
 
 export const useFahrberichteStore = defineStore('fahrberichteStore', {
@@ -20,7 +22,8 @@ export const useFahrberichteStore = defineStore('fahrberichteStore', {
         _data:                   [],
         _actDay:                 '',
         _previewFb:              false,
-        _lastDeletedItem:        ''
+        _lastDeletedItem:        '',
+        _selectedDay:            'today'
     }),
     getters: {
         data: (state) => state._data,
@@ -35,6 +38,19 @@ export const useFahrberichteStore = defineStore('fahrberichteStore', {
         },
         setActDay( day: string ) {
             this._actDay = day;
+        },
+        async loadDay () {
+            const day = this._selectedDay === 'next' ? dayjs(this._actDay, 'YYYY-MM-DD').add(1, 'days').format('YYYY-MM-DD') : dayjs().format('YYYY-MM-DD');
+            switch (this._selectedDay) {
+                case 'next':
+                    this.setActDay(day);
+                    await this.getData(day);
+                    break;
+                default:
+                    this.setActDay(day);
+                    await this.getData(day);
+                    break;
+            }
         },
         async getItemById( id: string ) {
             const fb: any = this._data.find(( item: IFahrbericht ) => {
@@ -107,8 +123,7 @@ export const useFahrberichteStore = defineStore('fahrberichteStore', {
             const { item: accCar }    = storeToRefs( fahrzeugeStore );
             const car = accCar.value?._id || '';
 
-            //TODO
-            //const data: any     = await accountService.getDataSocket( { rootGetters, event: 'getFBChanges', param: { car } } );
+            const data: any     = await accountService.getDataSocket( { event: 'getFBChanges', param: { car } } );
             
             const sendungsData = {
                 carNo:              car,
@@ -245,40 +260,42 @@ export const useFahrberichteStore = defineStore('fahrberichteStore', {
             const fahrzeugeStore = useFahrzeugeStore();
             const { item: accCar } = storeToRefs( fahrzeugeStore );
 
+            const menuStore = useMenuStore();
+            const auditStore = useAuditStore();
+
             const car = accCar.value?._id || '';
             log(date, car)
             try {
-                //TODO
-                // let fahrberichte: any     = await accountService.getDataSocket( { rootGetters, event: 'getFahrberichte', param: { date: date, car: car }} );
-                // log('fahrberichte', fahrberichte)
-                // if (fahrberichte) {
-                //     for ( const fb of fahrberichte as any ) {
-                //         await dispatch('mainmenu/setProgress', fb, {root: true});
+                let fahrberichte: any     = await accountService.getDataSocket( { event: 'getFahrberichte', param: { date, car }} );
+                log('fahrberichte', fahrberichte)
+                if (fahrberichte) {
+                    for ( const fb of fahrberichte as any ) {
+                        menuStore.setProgress(fb);
 
-                //         let sendungsData = {
-                //             carNo:              car,
-                //             date:               moment().format('YYYY-MM-DD'),
-                //             fbId:               fb._id,
-                //             _id:                fb._id,
-                //             status:             'sendStatusArrived'
+                        const sendungsData = {
+                            carNo:              car,
+                            date:               dayjs().format('YYYY-MM-DD'),
+                            fbId:               fb._id,
+                            _id:                fb._id,
+                            status:             'sendStatusArrived'
                             
-                //         }
+                        }
 
-                //         dispatch('audit/setItem', { type: 'sendungsstatus', value: sendungsData, fb }, {root:true})
-                //     }
-                // }
+                        auditStore.setItem({ type: 'sendungsstatus', value: sendungsData, fb })
+                    }
+                }
 
-                // if (state.data) {
-                //     const drivedTrips: any = state.data.filter( (item : any) => {
-                //         return item.frei
-                //     } );
+                if (this._data) {
+                    const drivedTrips: any = this._data.filter( (item : any) => {
+                        return item.frei
+                    } );
 
-                //     fahrberichte = [ ...fahrberichte, ...drivedTrips ]
+                    fahrberichte = [...fahrberichte, ...drivedTrips]
 
-                //     fahrberichte.sort(( a: any , b: any ) => { return b.startTime > a.startTime ? -1 : 1 } );
-                // }
+                    fahrberichte.sort(( a: any, b: any ) => { return b.startTime > a.startTime ? -1 : 1 } );
+                }
                     
-                // commit( 'setData', fahrberichte );
+                this._data = fahrberichte;
             } catch (error) {
                 log( 'Error getData', error );
                 this._data = [];

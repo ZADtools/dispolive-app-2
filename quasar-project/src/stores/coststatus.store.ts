@@ -1,6 +1,6 @@
-import { defineStore }                 from 'pinia';
+import { defineStore }                              from 'pinia';
 import Debug                                        from 'debug';  
-
+import { accountService }                           from 'src/services/account.service';
 const log       = Debug('app:coststatus.module');
 
 export interface ICoststatusItem {
@@ -22,11 +22,10 @@ export const useCoststatusStore = defineStore('coststatusStore', {
         async getData( ) {
             log( 'getData' );
             
-            try {
-                //TODO
-                // const data: any     = await accountService.getDataSocket( { rootGetters, event: 'getDefaultCol', param: { col: 'costStatus' } } );
-    
-                // commit( 'setData', data.data );
+            try {                
+                const data: any     = await accountService.getDataSocket( { event: 'getDefaultCol', param: { col: 'costStatus' } } );
+                
+                this._data = data.data;
             } catch (error) {
                 log( 'Error getData', error );
                 this._data = [];

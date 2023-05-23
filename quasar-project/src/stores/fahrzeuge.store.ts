@@ -2,11 +2,16 @@ import { defineStore, storeToRefs }     from 'pinia';
 import { LocalStorage }                 from 'quasar';
 import Debug                            from 'debug';
 import { useAccountStore }              from './account.store';
+import { accountService }               from 'src/services/account.service';
 
 const log       = Debug('app:fahrzeuge.module');
 
 export interface ICar {
     _id?:            string;
+    status?:         string;
+    name:            string;
+    key:             string;
+    changes?:        string;
 }
 
 export interface IFahrzeugeState {
@@ -34,7 +39,7 @@ export const useFahrzeugeStore = defineStore('fahrzeugeStore', {
     },
     actions: {
         clearData(  ) {
-            this._item = {};
+            this._item = null;
             this._data = [];
             this._sonderrechte = false;
         },
@@ -54,8 +59,8 @@ export const useFahrzeugeStore = defineStore('fahrzeugeStore', {
                     aktive: '1'
                 } 
             }   
-            
-            if ( beifahrer.value && beifahrer.value.firma.length > 0 ) {
+
+            if ( beifahrer.value && beifahrer.value.firma?.length > 0 ) {
                 param.filter.$or = [
                     {firma: ''}, 
                     {firma:  {$exists: false}} 
@@ -67,13 +72,15 @@ export const useFahrzeugeStore = defineStore('fahrzeugeStore', {
             }
 
             try {
-                this._loadData = true;
-                //TODO
-                // const fahrzeuge     = await accountService.getDataSocket( { rootGetters, event: 'getCars', param } );
-                // this._data          = fahrzeuge;
-                this._loadData      = false;
+                this._loadData = true
+                const fahrzeuge     = await accountService.getDataSocket( { event: 'getCars', param } )
+
+                if (Array.isArray(fahrzeuge))
+                    this._data          = fahrzeuge
+
+                this._loadData      = false
             } catch (error) {
-                log( 'Error getData', error );
+                log( 'Error getData', error )
                 this._loadData = false;
                 this._data = [];
             }

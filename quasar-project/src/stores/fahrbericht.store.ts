@@ -11,7 +11,7 @@ export interface IFahrberichtStore {
     _type:           string;
 }
 
-export const useFahrberichtStore = defineStore('sonderleistungenStore', {
+export const useFahrberichtStore = defineStore('fahrberichtStore', {
     state: (): IFahrberichtStore => ({
         _item:          null,
         _type:          ''
