@@ -103,7 +103,7 @@ import { useSocketStore }                                   from 'src/stores/soc
 import { useSettingsStore }                                 from 'src/stores/settings.store';
 import debug                                                from 'debug';
 import { storeToRefs }                                      from 'pinia';
-import { Dark, QSpinnerOval, Loading }                      from 'quasar';
+import { Dark, QSpinnerOval }                               from 'quasar';
 const log                                                   = debug('app:Cars');
 
 const   router                  = useRouter();
@@ -136,6 +136,7 @@ async function confirmSelectedCar ( car: ICar ) {
 
 async function setSelectedCar () {
     try {
+        accountStore.loading(true)
         await inventarStore.getData(selectedCar.value?._id || '');
         await inventarStore.getCount();
 
@@ -143,6 +144,7 @@ async function setSelectedCar () {
         await menuStore.setStatus({});
 
         await accountStore.startGeoPosWatch();
+        accountStore.loading(false)
         if ( selectedCar.value && settings.value && settings.value.inventarIntervall && settings.value.inventarIntervall > 0 && !carItemsCount.value[selectedCar.value.name] ) {
             router.push( '/inventar' )
         } else {
@@ -150,6 +152,7 @@ async function setSelectedCar () {
             router.push( '/app/fahrberichte' )
         }
     } catch (error) {
+        accountStore.loading(false)
         console.error('setSelectedCar', error)
     }
 }
@@ -160,28 +163,18 @@ function back() {
     router.push('/')
 }
 
-const progressData = {
-    spinner: QSpinnerOval,
-    spinnerColor: 'secondary',
-    spinnerSize: 100,
-    backgroundColor: 'grey-9',
-    messageColor: 'white'
-}
-
 onMounted( async ()  => {
-    Loading.show(progressData)
+    accountStore.loading(true)
     await accountStore.init()
-
-    console.log('init account done')
+    log('init account done')
     await socketStore.init()
-    console.log('socketInit done')
+    log('socketInit done')
     await fahrzeugeStore.getData()
-    console.log('getCars Done')
+    log('getCars Done')
     await settingsStore.getData()
-    console.log('Settings Done')
+    log('Settings Done')
     await inventarStore.getCount()
-    console.log('itemsCount Done')
-
-    Loading.hide()
+    log('itemsCount Done')
+    accountStore.loading(false)
 } )
 </script>

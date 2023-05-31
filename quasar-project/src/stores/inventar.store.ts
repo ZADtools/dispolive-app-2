@@ -45,7 +45,6 @@ export const useInventarStore = defineStore('inventarStore', {
                     let countItems = 0;
 
                     for ( const key in items.data ) {
-                        console.log(key)
                         countItems += items.data[key].length
                     }
 

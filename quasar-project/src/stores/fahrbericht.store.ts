@@ -3,22 +3,28 @@ import Debug                                        from 'debug';
 import dayjs                                        from 'dayjs';
 import { useNavStore, INav }                        from './nav.store';
 import { IFahrbericht, IStopItem }                  from './menu.store';
+import { extend }                                   from 'quasar';
 
 const log       = Debug('app:fahrbericht.module');
 
 export interface IFahrberichtStore { 
+    _exists:          boolean;
     _item:           IFahrbericht | null;
     _type:           string;
+    _stops:          any[];
 }
 
-export const useFahrberichtStore = defineStore('fahrberichtStore', {
+export const fahrberichtModule = {
     state: (): IFahrberichtStore => ({
+        _exists:        true,
         _item:          null,
-        _type:          ''
+        _type:          '',
+        _stops:         []
     }),
     getters: {
         item:           state => state._item,
-        type:           state => state._type
+        type:           state => state._type,
+        stops:          state => state._stops,
     },
     actions: {
         clearData( ) {
@@ -26,9 +32,11 @@ export const useFahrberichtStore = defineStore('fahrberichtStore', {
             this._type = '';
         },
         async updateItem ( fahrbericht: IFahrbericht ) {
-            this._item = { ...this._item, ...fahrbericht };
+            this._item = extend(true, {}, this._item, fahrbericht );
         }, 
-
+        removeSelectedItem () {
+            this._item = null;
+        },
         setItem({ item, func, type }: { item: IFahrbericht, func?: string, type: string }) {
             if (func === 'resetTimestamps' && this._item) {
                 this._item.startBegin = '';
@@ -43,11 +51,11 @@ export const useFahrberichtStore = defineStore('fahrberichtStore', {
                     })
             }
 
-            let obj = {...item};
+            let obj = extend(true, {}, item);
 
             if (this._item?._id === item._id)
                 obj = { ...this.item, ...item }
-                
+
             this._item      = obj;
             this._type      = type;
         },
@@ -64,21 +72,16 @@ export const useFahrberichtStore = defineStore('fahrberichtStore', {
             this.setItem({ item, type: 'static' } );
         },
         async setAcceptItem( item: IFahrbericht ) {
-            log( 'setAcceptItem', item );
             this.setItem({ item, type: 'dynamic' } );
 
             const navStore = useNavStore();
             navStore.addNavPoint( item );
-        },
-        async removeAcceptItem( item: INav ) {
-            log( 'removeItem', item );
-            const navStore = useNavStore();
-            
-            navStore.removeNavPoint( item );
         },
         setActTrip( item: IFahrbericht ) {
             log( 'setActTrip', item );
             this.setItem({ item, type: 'dynamic' } );
         }
     }
-});
+};
+
+export const useFahrberichtStore = defineStore('fahrberichtStore', fahrberichtModule);

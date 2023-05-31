@@ -5,6 +5,9 @@ const log       = Debug('app:infektion.module');
 
 export interface IInfektion {
     _id:            string;
+    infektionsName: string;
+    desc:           string;
+    krz:            string;
 }
 
 export interface IInfektionenState { 

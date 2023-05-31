@@ -7,7 +7,7 @@ const routes: RouteRecordRaw[] = [
         children:   [
             //{ path: '', component: () => import('pages/Index.vue') },
             { path: 'fahrberichte', name: 'fahrberichte', component: () => import('pages/Fahrberichte.vue') },
-            // { path: 'tripNow/:id', name: 'tripNow', component: () => import('pages/TripNow.vue') },
+            { path: 'fahrberichtactiv/:id', name: 'fahrberichtactiv', component: () => import('pages/FahrberichtActiv.vue') },
             { path: 'contact', name: 'contact', component: () => import('pages/Contacts.vue') },
             // { path: 'cardreader', name: 'cardreader', component: () => import('pages/Cardreader.vue') },
             { path: 'messenger', name: 'messenger', component: () => import('pages/Messenger.vue') },

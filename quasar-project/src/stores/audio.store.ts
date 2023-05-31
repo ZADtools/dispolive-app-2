@@ -1,6 +1,7 @@
-import { defineStore }                              from 'pinia';
+import { defineStore, storeToRefs }                              from 'pinia';
 import Debug                                        from 'debug';  
-//import { NativeAudio }                            from '@capacitor-community/native-audio'
+import { NativeAudio }                              from '@capgo/native-audio'
+import { useAccountStore }                          from './account.store';
 
 const log       = Debug('app:audio.module');
 log('start')
@@ -13,70 +14,81 @@ export const useAudioStore = defineStore('audioStore', {
     actions: {
         async init ( ) {
             //for ios
-            const path = 'sounds/'
+            let path = ''
             log(path)
-            //TODO
+
+            const accountStore = useAccountStore()
+            const { device } = storeToRefs(accountStore)
+
             //for android
-            // if ( rootState.account.device.operatingSystem == 'android' )
-            //     path = ''
+            if ( accountStore.device.operatingSystem === 'android' )
+                path = ''
 
-            // NativeAudio.preload({
-            //     assetPath:path+'adresse.mp3',
-            //     assetId: 'adresse',
-            //     volume: 1.0,
-            //     audioChannelNum: 1
-            // });
+            NativeAudio.configure({
+                focus: false
+            })
 
-            // NativeAudio.preload({
-            //     assetPath: path+'entzogen.mp3',
-            //     assetId: 'entzogenFahrt',
-            //     volume: 1.0,
-            //     audioChannelNum: 2
-            // });
+            if (device.value.isVirtual)
+                return
 
-            // NativeAudio.preload({
-            //     assetPath: path+'neuefahrt.mp3',
-            //     assetId: 'neueFahrt',
-            //     volume: 1.0,
-            //     audioChannelNum: 3
-            // });
+            NativeAudio.preload({
+                assetPath:path + 'adresse.mp3',
+                assetId: 'adresse',
+                volume: 1.0,
+                audioChannelNum: 1
+            });
 
-            // NativeAudio.preload({
-            //     assetPath:path+'neuenachricht.mp3',
-            //     assetId: 'neueNachricht',
-            //     volume: 1.0,
-            //     audioChannelNum: 4
-            // });
+            NativeAudio.preload({
+                assetPath: path + 'entzogen.mp3',
+                assetId: 'entzogenFahrt',
+                volume: 1.0,
+                audioChannelNum: 2
+            });
+
+            NativeAudio.preload({
+                assetPath: path + 'neuefahrt.mp3',
+                assetId: 'neueFahrt',
+                volume: 1.0,
+                audioChannelNum: 3
+            });
+
+            NativeAudio.preload({
+                assetPath:'neuenachricht.mp3',
+                assetId: 'neueNachricht',
+                volume: 1.0,
+                audioChannelNum: 4
+            });
         },
 
         unload() {
-            //TODO
-            // NativeAudio.unload({
-            //     assetId: 'adresse',
-            // });
+            NativeAudio.unload({
+                assetId: 'adresse',
+            });
 
-            // NativeAudio.unload({
-            //     assetId: 'entzogenFahrt',
-            // });
+            NativeAudio.unload({
+                assetId: 'entzogenFahrt',
+            });
 
-            // NativeAudio.unload({
-            //     assetId: 'neueFahrt',
-            // });
+            NativeAudio.unload({
+                assetId: 'neueFahrt',
+            });
 
-            // NativeAudio.unload({
-            //     assetId: 'neueNachricht',
-            // });
+            NativeAudio.unload({
+                assetId: 'neueNachricht',
+            });
 
-            // NativeAudio.unload({
-            //     assetId: 'empty',
-            // });
-
+            NativeAudio.unload({
+                assetId: 'empty',
+            });
         },
 
         async play ( file: string ) {
             log(file)
-            //TODO
-            //await NativeAudio.play({assetId: file, time: 0.0});
+        try {
+            await NativeAudio.play({assetId: file});
+        } catch (error) {
+            console.log(error)
+        }
         }
     }
 });

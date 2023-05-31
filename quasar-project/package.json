@@ -12,11 +12,14 @@
     "build": "quasar build"
   },
   "dependencies": {
+    "@capacitor-community/background-geolocation": "^1.2.14",
     "@capacitor/app-launcher": "^5.0.2",
     "@capacitor/device": "^5.0.2",
     "@capacitor/keyboard": "^5.0.2",
+    "@capacitor/local-notifications": "^5.0.2",
     "@capacitor/network": "^5.0.2",
     "@capacitor/status-bar": "^5.0.2",
+    "@capgo/native-audio": "^6.0.7",
     "@quasar/extras": "^1.0.0",
     "@w4b/socket-1": "https://github.com/RobertPrediger/socket-1.git",
     "@w4b/socket-4": "https://github.com/RobertPrediger/socket-4.git",
@@ -24,6 +27,7 @@
     "dayjs": "^1.11.7",
     "debug": "^4.3.4",
     "idb": "^7.1.1",
+    "jsondiffpatch": "^0.4.1",
     "pinia": "^2.0.11",
     "quasar": "^2.6.0",
     "socket.io-client": "^2.0.0",

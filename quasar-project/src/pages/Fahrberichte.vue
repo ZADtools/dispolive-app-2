@@ -7,11 +7,8 @@
                         <q-skeleton width="40px" height="55px" type="QBtn"/>
                     </q-item-section>
                     <q-item-section class="q-ml-sm">
-                
+                        <q-skeleton type="text"/>          
                         <q-skeleton type="text"/>
-                        
-                        <q-skeleton type="text"/>
-                    
                         <q-skeleton type="text"/>
                     </q-item-section>
                 </q-item>
@@ -34,7 +31,7 @@
                                 </q-item-label>
                                 <q-item-label v-if="!item.patName && !item.patSurname && item.type !== 'Linie'" class="text-body1 q-pa-sm">Keine Patientenangaben vorhanden</q-item-label>
                                 <q-item-label v-if="item.type == 'Linie'" class="text-body1 q-pa-sm">Linie: {{item.titel}}</q-item-label>
-                                <q-item-label v-if="item.type == 'Materialfahrt' && item.type !== 'Linie'" class="text-body1 q-pa-sm">Materialfahrt</q-item-label>
+                                <q-item-label v-if="item.type === 'Materialfahrt'" class="text-body1 q-pa-sm">Materialfahrt</q-item-label>
                             </div>
                             <div class="col-4" v-if="item.type === 'Serie' || item.type === 'Spontan' || item.type === 'Konsil'">
                                 <div class="row">
@@ -53,29 +50,29 @@
             </template>
         </q-list>
         <q-dialog
-            :value="previewFb"
-            @input="(val) => setPreviewFb(val)"
+            :model-value="previewFb"
+            @update:model-value="(val) => fahrberichteStore.setPreviewFb(val)"
             persistent
             :maximized="true"
             transition-show="jump-right"
             transition-hide="jump-right">
             <q-card class="bg-white" :class="[device.platform == 'android' ? 'saveAreaAndroid' : '']">
                 <q-card-actions class="row q-px-sm q-pt-sm bg-grey-3">
-                    <div class="q-pr-sm" :class="{'col-6': fbItem.date === dayjs().format('YYYY-MM-DD'), 'col-12': fbItem.date !== dayjs().format('YYYY-MM-DD')}">
+                    <div class="q-pr-sm" :class="{'col-6': fbItem && fbItem.date === dayjs().format('YYYY-MM-DD'), 'col-12': fbItem && fbItem.date !== dayjs().format('YYYY-MM-DD')}">
                         <q-btn class="full-width text-body1" padding="6px" v-close-popup color="negative" >
                             <div class="ellipsis">
                                 Zurück
                             </div>
                         </q-btn>
                     </div>
-                    <div class="col-6 q-pl-sm" v-if="fbItem.date === dayjs().format('YYYY-MM-DD') && fbItem.frei && fbItem.type !== 'Linie'">
+                    <div class="col-6 q-pl-sm" v-if="fbItem && fbItem.date === dayjs().format('YYYY-MM-DD') && fbItem.frei && fbItem.type !== 'Linie'">
                         <q-btn class="full-width text-body1" padding="6px" @click="showInsertData" color="primary" >
                             <div class="ellipsis">
                                 Daten ergänzen
                             </div>
                         </q-btn>
                     </div>
-                    <div class="col-6 q-pl-sm" v-if="fbItem.date === dayjs().format('YYYY-MM-DD') && !fbItem.frei">
+                    <div class="col-6 q-pl-sm" v-if="fbItem && fbItem.date === dayjs().format('YYYY-MM-DD') && !fbItem.frei">
                         <q-btn class="full-width text-body1" padding="6px" @click="showAskDialog()" color="primary" >
                             <div class="ellipsis">
                                 Fahrt annehmen
@@ -84,11 +81,11 @@
                     </div>
                 </q-card-actions>
                 <q-list class="default-maximized-modal">
-                    <!-- <TripMainLayout :actItem="fbItem"/> -->
+                <fahrbericht-view v-if="fbItem"/>
                 </q-list>
             </q-card>
         </q-dialog>
-        <!-- <InsertDataDialog :key="insertDataDialog" :insertDataDialog="insertDataDialog" :actItem="fbItem" @close="showInsertData" /> -->
+        <InsertDataDialog :key="insertDataDialog" :insertDataDialog="insertDataDialog" :actItem="fbItem" @close="showInsertData" />
         <Dialog 
             v-if="askDialog"
             text="Diese Fahrt wurde schon begonnen. Möchten Sie die Fahrt fortsetzen oder neu beginnen?" 
@@ -97,19 +94,20 @@
             :func="tripAccept" 
             :funcAbort="tripAccept" 
             :abortParam="true"
-            :value="askDialog"  
-            @input="(val) => askDialog = val"  
+            :modelValue="askDialog"  
+            @update:modelValue="(val) => askDialog = val"  
         />
     </div>
 </template>
 
 <script lang="ts" setup>
-import { onBeforeMount, onBeforeUnmount, ref }                          from 'vue';
-//import * as TripModule                                              from 'src/store/fahrbericht.module';
+import { onBeforeMount, onBeforeUnmount, ref }                      from 'vue';
+import { useRouter }                                                from 'vue-router';
 import Dialog                                                       from '../components/Dialog.vue';
-//import TripMainLayout                                               from 'src/components/TripMainLayout.vue';
+import FahrberichtView                                              from 'src/components/FahrberichtView.vue';
 //import InsertDataDialog                                             from 'src/components/InsertDataDialog.vue';
 import { useAccountStore }                                          from 'src/stores/account.store';
+import * as FahrberichtModule                                       from 'src/stores/fahrbericht.store';
 import { useFahrberichtStore }                                      from 'src/stores/fahrbericht.store';
 import { useFahrberichteStore }                                     from 'src/stores/fahrberichte.store';
 import { useMenuStore, IFahrbericht }                               from 'src/stores/menu.store';
@@ -117,18 +115,17 @@ import { useAuditStore }                                            from 'src/st
 import { useNavStore }                                              from 'src/stores/nav.store';
 import { useSerienKategorienStore }                                 from 'src/stores/serienkategorien.store';
 import { useSettingsStore }                                         from 'src/stores/settings.store';
+import { extend }                                                   from 'quasar';
 import dayjs                                                        from 'dayjs';
-
+import { storeToRefs, defineStore }                                 from 'pinia';
 import debug                                                        from 'debug';
-import { storeToRefs } from 'pinia';
+
 const log                                                           = debug('app:fahrberichte')
-//TODO                                                            
-//const store                 = useStore();
 const accountStore          = useAccountStore()
 const { darkMode, device }  = storeToRefs(accountStore)
 
 const fahrberichtStore      = useFahrberichtStore()
-const { item: fbItem }    = storeToRefs(fahrberichtStore)
+const { item: fbItem }      = storeToRefs(fahrberichtStore)
 
 const fahrberichteStore     = useFahrberichteStore()
 const {data: getTrips, previewFb, actDay } = storeToRefs(fahrberichteStore)
@@ -152,6 +149,8 @@ const   askDialog             = ref(false),
         insertDataDialog      = ref(false),
         insertData            = ref({});
 
+const router = useRouter()
+
 onBeforeMount( async () => {
     accountStore.setSecondHeader('Fahrberichte')
     accountStore.setTitle('Fahrten')
@@ -167,7 +166,7 @@ function showInsertData () {
 async function showTrip ( item: IFahrbericht ) {
     if ( item.frei ) {
         if ( item.type === 'Spontan' || item.type === 'Konsil' )
-            insertData.value = { ...item };
+            insertData.value = extend( true, {}, item );
 
         fahrberichteStore.setPreviewFb( true );
         fahrberichtStore.setShowItem( item );
@@ -183,11 +182,8 @@ async function showTrip ( item: IFahrbericht ) {
     if (existNavPoint) {
         actItem.value = item;
         navStore.setSelected(existNavPoint)
-        //TODO
-        //router.push( '/app/tripNow/' + item._id ).catch( (err) => err);
+        router.push( `/app/fahrberichtactiv/${item._id}`)
     } else {
-        item = await fahrberichteStore.getItemById( item._id )
-
         fahrberichtStore.setShowItem( item );
         fahrberichteStore.setPreviewFb( true );
         actItem.value = item;
@@ -204,6 +200,7 @@ function showAskDialog () {
 }
 
 async function tripAccept (removeTimestamps?: boolean) {
+    console.log('44444')
     // register dynamic module for data handling
     log( 'create dynamic trip', fbItem.value?._id );
     if (!fbItem.value)
@@ -217,14 +214,15 @@ async function tripAccept (removeTimestamps?: boolean) {
             await fahrberichtStore.resetTimestamps();
             await auditStore.setItem({type: 'fahrbericht', value: fbItem.value, fb: fbItem.value, noAlert: true });
         }
-        //TODO
-        // store.value.registerModule( fbItem.value._id, TripModule.trip );
-        // store.value.dispatch( fbItem.value._id + '/setAcceptItem', fbItem.value );
-
+        //create dynamed store für fb
+        const useDynamedStore = defineStore( fbItem.value._id, FahrberichtModule.fahrberichtModule);
+        const dynamedStore: any = useDynamedStore();
+        dynamedStore.setAcceptItem(fbItem.value);
         accountStore.setTitle(fbItem.value.titel || '')
-
+        router.push(`/app/fahrberichtactiv/${fbItem.value._id}`)
+        //TODO
         setTimeout( async () => {
-            await menuStore.setStatus({fbId: fbItem.value?._id});
+            await menuStore.setStatus({fbId: fbItem.value?._id})
         } )
     } catch (err) {
         log( 'Error creating trip', err );

@@ -3,7 +3,7 @@ import Debug                                        from 'debug';
 import dayjs                                        from 'dayjs';
 import advancedFormat                               from 'dayjs/plugin/advancedFormat';
 import { openDB }                                   from 'idb';
-import { uid, Notify }                              from 'quasar';
+import { uid, Notify, extend }                              from 'quasar';
 import { IFahrbericht }                             from './menu.store';
 import { useAccountStore }                          from './account.store';
 import { useMessengerStore }                        from './messenger.store';
@@ -174,7 +174,7 @@ export const useAuditStore = defineStore('auditStore', {
         async sendData ( ) {
             const accountStore = useAccountStore()
             const { connected } = storeToRefs(accountStore)
-            const connect       = false //connected.value;
+            const connect       = connected.value;
 
             if ( !connect )
                 return false
@@ -200,17 +200,17 @@ export const useAuditStore = defineStore('auditStore', {
         async setItem( item: IAuditItem ) {
             log( 'setItem', item.type, item );
             if (!item.type) {
-                log("Datensatz hat kein 'type' ungültige Struktur'");
+                console.log("Datensatz hat kein 'type' ungültige Struktur'");
                 return;
             }
 
             if (!item.value) {
-                log("Datensatz hat kein 'value' ungültige Struktur");
+                console.log("Datensatz hat kein 'value' ungültige Struktur");
                 return;
             }
 
             if (!item.value._id) {
-                log("Datensatz hat kein '_id' ungültige Struktur");
+                console.log("Datensatz hat kein '_id' ungültige Struktur");
                 return;
             }
 
@@ -218,7 +218,7 @@ export const useAuditStore = defineStore('auditStore', {
             const { geoPos } = storeToRefs(accountStore)
 
             const navStore = useNavStore()
-            const { data: navItems } = storeToRefs(navStore)
+            const { data: navItems, selected: selectedNav } = storeToRefs(navStore)
 
             //set timestamp
             item.timestampIntern = dayjs().format('x');
@@ -228,6 +228,9 @@ export const useAuditStore = defineStore('auditStore', {
                 if (item.type === 'sonderNotice') {
                     item.value.fbId                             = item.value._id;
                     item.value.sonderrechte                     = 1;
+
+                    if (selectedNav.value)
+                        selectedNav.value.sonderrechte              = 1;
                 }
 
                 if (item.type === 'zeitstempel') {
@@ -236,7 +239,7 @@ export const useAuditStore = defineStore('auditStore', {
                     item.value.fbId                             = item.value._id;
                 }
                 //******HOOOK Ende
-                const data = {...item};
+                const data: any = extend(true, {}, item);
 
                 //******HOOOK delete before DB Update
                 if ( data.desiProt )
@@ -259,7 +262,7 @@ export const useAuditStore = defineStore('auditStore', {
                         item.value.stops = [];
 
                         fb.item.stops.forEach( ( stop: any ) => {
-                            const cloneStop = { ...stop }
+                            const cloneStop: any = extend(true, {}, stop);
 
                             if (stop._id === item.value.id) {
                                 cloneStop.timestamp  = item.value.timestamp;
@@ -268,13 +271,11 @@ export const useAuditStore = defineStore('auditStore', {
 
                             item.value.stops.push( cloneStop )
                         } )
-
-                        log('stop', item.value.id, fb.item.stops)
                     }
 
-                    const data = {...fb.item, ...item.value};
+                    //const data = fb.item.stops = item.value //{...fb.item, ...item.value};
                     
-                    await accountStore.globalDispatcher(data)
+                    await accountStore.globalDispatcher(item.value)
                 }
 
                 //berechne den fortschritt der fahrt neu

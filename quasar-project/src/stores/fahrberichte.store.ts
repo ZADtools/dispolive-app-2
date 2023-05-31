@@ -3,9 +3,15 @@ import Debug                            from 'debug';
 import dayjs                            from 'dayjs';
 import { useMenuStore, IFahrbericht }                 from './menu.store';
 import { useFahrberichtStore }          from './fahrbericht.store';
+import { useNavStore }                  from './nav.store';
 import { useAuditStore }                from './audit.store';
 import { useFahrzeugeStore }            from './fahrzeuge.store';
 import { accountService }               from 'src/services/account.service';
+import { useAudioStore }                from './audio.store';
+import { useAccountStore }              from './account.store';
+import { useSocketStore }               from './socket.store';
+import { LocalNotifications }           from '@capacitor/local-notifications';
+import * as jsondiffpatch               from 'jsondiffpatch';
 
 const log       = Debug('app:fahrberichte.module');
 
@@ -120,6 +126,12 @@ export const useFahrberichteStore = defineStore('fahrberichteStore', {
             //TODO
             //const global = Global();
             const fahrzeugeStore    = useFahrzeugeStore();
+            const fahrberichtStore  = useFahrberichtStore();
+            const navStore          = useNavStore();
+            const menuStore         = useMenuStore();
+            const audioStore        = useAudioStore();
+            const auditStore        = useAuditStore();
+            const accountStore      = useAccountStore();
             const { item: accCar }    = storeToRefs( fahrzeugeStore );
             const car = accCar.value?._id || '';
 
@@ -133,127 +145,126 @@ export const useFahrberichteStore = defineStore('fahrberichteStore', {
                 status:             ''
             }
             log(sendungsData)
-            //TODO
-            // if ( data && data.length > 0 ) {
-            //     _.each(data, async ( elm ) => {
-                
-            //         const fbOpen = _.find( rootGetters['nav/item'], (item) => {
-            //             return item.item._id == elm.fbId;
-            //         } )
 
-            //         if ( elm.delete ) {
+            if ( data && data.length > 0 ) {
+                data.forEach(( elm: any ) => {
+                    //TODO
+                    const fbOpen = null;
+                    // const fbOpen = _.find( rootGetters['nav/item'], (item) => {
+                    //     return item.item._id == elm.fbId;
+                    // } )
 
-            //             log('fbOpen', fbOpen)
+                    if ( elm.delete ) {
+                        //TODO
+                        // if (fbOpen) {
+                        //     global.tripAbort(fbOpen.item._id, fbOpen.item);
+                        //     commit( 'setLastDeletedItem', fbOpen )
+                        // }
 
-            //             if (fbOpen) {
-            //                 global.tripAbort(fbOpen.item._id, fbOpen.item);
-            //                 commit( 'setLastDeletedItem', fbOpen )
-            //             }
+                        //remove item from trips array
+                        //dispatch('setPreviewFb', false)
+                        this.deleteItem( elm.fbId )
+                        navStore.removeNavPoint( { _id: elm.fbId } )
+                        audioStore.play( 'entzogenFahrt' );
 
-            //             //remove item from trips array
-            //             dispatch('setPreviewFb', false)
-            //             commit( 'deleteItem', elm.fbId )
+                        if ( !accountStore._appInForeground && accountStore._device.platform === 'ios' )
+                            LocalNotifications.schedule({
+                                notifications: [ 
+                                    {
+                                        id:     Math.floor(Math.random() * 1000000000),
+                                        title:  'Fahrt entzogen',
+                                        body:   'Es wurde Ihnen eine Fahrt entzogen'
+                                    }
+                                ]
+                            });
+                    } else {
+                        const exists = this._data.find(( item ) => {
+                            return item._id === elm.fbId
+                        });
+                        log('exists', exists, elm.item)
 
-            //             dispatch('nav/removeNavPoint', {_id: elm.fbId}, {root: true})
-                   
-            //             dispatch( 'audio/play', 'entzogenFahrt', { root: true } );
+                        //check if item empty
+                        const notEmpty = Object.keys(elm.item).length > 0;
 
-            //             if ( !rootState.account.appInForeground && rootState.account.device.platform === 'ios' )
-            //                 await LocalNotifications.schedule({
-            //                     notifications: [ 
-            //                         {
-            //                             id:     Math.floor(Math.random() * 1000000000),
-            //                             title:  'Fahrt entzogen',
-            //                             body:   'Es wurde Ihnen eine Fahrt entzogen'
-            //                         }
-            //                     ]
-            //                 });
-            //         } else {
-            //             const exists = _.find( state.data, function( item ) {
-            //                 return item._id == elm.fbId;
-            //             });
-            //             log('exists', exists, elm.item)
+                        if ( notEmpty ) {
+                            let  item;
 
-            //             //check if item empty
-            //             const empty = _.isEmpty(elm.item);
+                            if ( exists ) { 
+                                item = jsondiffpatch.patch( {...exists}, elm.item);
+                                item.sendStatusRead = '';
+                                if (
+                                    fbOpen &&
+                                    ( 
+                                        exists.startStreet !== item.startStreet ||
+                                        exists.startZip !== item.startZip ||
+                                        exists.startCity !== item.startCity ||
+                                        exists.targetStreet !== item.targetStreet ||
+                                        exists.targetZip !== item.targetZip ||
+                                        exists.startInstitution !== item.startInstitution ||
+                                        exists.targetInstitution !== item.targetInstitution 
+                                    )
+                                ) {
+                                    audioStore.play('adresse')
+                                    menuStore.setAdressChange(true)
 
-            //             if ( !empty ) {
-            //                 let  item;
-            //                 if ( exists ) { 
+                                    if ( accountStore._appInForeground && accountStore._device.platform === 'ios' )
+                                        LocalNotifications.schedule({
+                                            notifications: [ 
+                                                {
+                                                    id:     Math.floor(Math.random() * 1000000000),
+                                                    title:  'Adressänderungen',
+                                                    body:   'Es wurde die Adresse der Fahrt geändert'
+                                                }
+                                            ]
+                                        });
+                                }
+
+                                sendungsData.fbId       = item._id;
+                                sendungsData._id        = item._id;
+                                sendungsData.status     = 'sendStatusArrived';
+
+                                auditStore.setItem( { type: 'sendungsstatus', value: sendungsData, fb: item } );
+                                this.updateItem( item )
+
+                                if (!fbOpen)
+                                    fahrberichtStore.setShowItem( item )
                                 
-            //                     item = jsondiffpatch.patch( {...exists}, elm.item);
-            //                     item.sendStatusRead = '';
-            //                     if (
-            //                         fbOpen &&
-            //                         ( 
-            //                             exists.startStreet !== item.startStreet ||
-            //                             exists.startZip !== item.startZip ||
-            //                             exists.startCity !== item.startCity ||
-            //                             exists.targetStreet !== item.targetStreet ||
-            //                             exists.targetZip !== item.targetZip ||
-            //                             exists.startInstitution !== item.startInstitution ||
-            //                             exists.targetInstitution !== item.targetInstitution 
-            //                         )
-            //                     ) {
-            //                         dispatch( 'audio/play', 'adresse', { root: true } );
-            //                         dispatch('mainmenu/setAdressChange', true, {root: true})
+                                accountStore.globalDispatcher( item )
+                                navStore.updateNavPoint(item)
+                            } else {     
+                                const item = jsondiffpatch.patch({}, elm.item)
 
-            //                         if ( !rootState.account.appInForeground && rootState.account.device.platform === 'ios' )
-            //                             await LocalNotifications.schedule({
-            //                                 notifications: [ 
-            //                                     {
-            //                                         id:     Math.floor(Math.random() * 1000000000),
-            //                                         title:  'Adressänderungen',
-            //                                         body:   'Es wurde die Adresse der Fahrt geändert'
-            //                                     }
-            //                                 ]
-            //                             });
-            //                     }
+                                sendungsData.fbId       = item._id;
+                                sendungsData._id        = item._id;
+                                sendungsData.status     = 'sendStatusArrived';
 
-            //                     sendungsData.fbId       = item._id;
-            //                     sendungsData._id        = item._id;
-            //                     sendungsData.status     = 'sendStatusArrived';
+                                auditStore.setItem( { type: 'sendungsstatus', value: sendungsData, fb: item } );
 
-            //                     dispatch('audit/setItem', { type: 'sendungsstatus', value: sendungsData, fb: item }, {root:true})
-            //                     dispatch('updateItem', item);
-            //                     if (!fbOpen)
-            //                         dispatch('trip/setShowItem', item, {root: true});
-            //                     dispatch('account/globalDispatcher', item, {root: true});
-            //                     dispatch('nav/updateNavPoint', item, {root: true});
+                                this.insertItem( item )
+                                menuStore.setProgress(item)
 
-            //                 } else {
-                                
-            //                     let item = jsondiffpatch.patch({}, elm.item)
+                                audioStore.play('neueFahrt')
 
-            //                     sendungsData.fbId       = item._id;
-            //                     sendungsData._id       = item._id;
-            //                     sendungsData.status     = 'sendStatusArrived';
+                                if ( !accountStore._appInForeground && accountStore._device.platform === 'ios' )
+                                    LocalNotifications.schedule({
+                                        notifications: [ 
+                                            {
+                                                id:     Math.floor(Math.random() * 1000000000),
+                                                title:  'Neue Fahrt',
+                                                body:   'Sie haben eine neue Fahrt'
+                                            }
+                                        ]
+                                    });
+                            }
+                        }
+                    }
 
-            //                     dispatch('audit/setItem', { type: 'sendungsstatus', value: sendungsData, fb: item }, {root:true})
-
-            //                     dispatch('insertItem', item)
-            //                     dispatch('mainmenu/setProgress', item, {root: true});
-
-            //                     dispatch( 'audio/play', 'neueFahrt', { root: true } );
-
-            //                     if ( !rootState.account.appInForeground && rootState.account.device.platform === 'ios' )
-            //                         await LocalNotifications.schedule({
-            //                             notifications: [ 
-            //                                 {
-            //                                     id:     Math.floor(Math.random() * 1000000000),
-            //                                     title:  'Neue Fahrt',
-            //                                     body:   'Sie haben eine neue Fahrt'
-            //                                 }
-            //                             ]
-            //                         });
-            //                 }
-            //             }
-            //         }
-
-            //         // Änderung auf dem Server löschen
-            //         rootGetters['socket/io'].emit( 'removeFBChange', elm._id );
-            //     });
-            // }
+                    const socketStore = useSocketStore();
+                    const { io } = storeToRefs( socketStore );
+                    // Änderung auf dem Server löschen
+                    io.value.emit( 'removeFBChange', elm._id );
+                });
+            }
         },
         // getData
         async getData( date: string ) {

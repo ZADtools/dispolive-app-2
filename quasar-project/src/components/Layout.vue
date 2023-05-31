@@ -10,7 +10,7 @@
 
         </slot>
         <q-page-container>
-            <q-page class="scroll" :class="[!Dark.isActive ? 'bg-white' : 'bg-dark', custClass]">
+            <q-page class="scroll" ref="content" :class="[!Dark.isActive ? 'bg-white' : 'bg-dark', custClass]">
                 <slot name="content">
 
                 </slot>
@@ -29,6 +29,7 @@ import { ref, watch }                   from 'vue'
 import { Platform, Dark, uid }          from 'quasar'
 import { useAccountStore }              from 'src/stores/account.store';
 import { storeToRefs }                  from 'pinia';
+import { useRouter }                    from 'vue-router';
 
 const props = defineProps({
     view: String,
@@ -51,13 +52,18 @@ const props = defineProps({
 })
 
 const accountStore = useAccountStore()
-const { secondHeader, title } = storeToRefs( useAccountStore() )
+const { secondHeader, title } = storeToRefs( accountStore )
 
 let secondHeaderHeight = 0
 const firshHeaderHeight = 68
 const foot = ref(false)
+const content = ref<any>(null)
+const router = useRouter()
 
-const key = ref('')
+router.beforeEach((to, from) => {
+    if (content.value)
+        content.value.$el.scrollTop = 0
+})
 
 watch([secondHeader, title], ( newVal ) => {
     if (  secondHeader.value === 'Fahrberichte' || secondHeader.value === 'contacts' || secondHeader.value === 'Messenger' || secondHeader.value === 'Desinfektion' || secondHeader.value === 'dienstplan' || secondHeader.value === 'missingdata' )

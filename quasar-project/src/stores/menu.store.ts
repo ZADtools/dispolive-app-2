@@ -12,7 +12,14 @@ import dayjs                            from 'dayjs';
 const log       = Debug('app:fahrzeuge.module');
 
 export interface IStopItem {
+    _id:            string;
     timestamp:      string;
+    street:        string;
+    zip:          string;
+    city:         string;
+    lat:          number;
+    lng:          number;
+    adress:       string;
 }
 export interface IFahrbericht {
     _id:            string;
@@ -47,6 +54,16 @@ export interface IFahrbericht {
     zuweisZeit?:      string;
     startTimeBis?:    string;
     sonderrechte?:    boolean;
+    startInstitution?: string;
+    targetInstitution?: string;
+    color?:            string;
+    einsatzNummer?:    string;
+    changes?:          boolean;
+    itName?:           string;
+    infectionType?:    string;
+    transVorhanden?:   string;
+    newsPatient?:      string; 
+    newsCar?:         string;
 }
 
 export interface IMenuState {
@@ -85,28 +102,6 @@ export const useMenuStore = defineStore('menuStore', {
         informStatusPause( data: boolean ) {
             this._informPause = data;
         },
-        setSonderrechteApp( ) {
-            const accountStore      = useAccountStore();
-            const { sessionId }     = storeToRefs(accountStore);
-
-            const fahrzeugeStore    = useFahrzeugeStore();
-            const { item }          = storeToRefs(fahrzeugeStore);
-            
-            const data: any = {
-                sessionID: sessionId.value,
-                status: { 
-                    car:            item.value?._id,
-                    carStatus:      this._item.status,
-                    version:        pack.version
-                }
-            };
-
-            const socketStore       = useSocketStore();
-            const { io }            = storeToRefs(socketStore);
-
-            io.value.emit('setCarStatus', data);
-            this._item.sonderrechte = false;
-        },
         setAdressChange( status: boolean ) {
             log('setAdressChange', status)
             this._adressChange = status;
@@ -116,32 +111,32 @@ export const useMenuStore = defineStore('menuStore', {
             //dispatch('setSelectedText', 'Rückruf angefordert', {root: true})
         },
         async setProgress( fb: IFahrbericht ) {
-            let progress = 0;
-            let status = { key: 'startBegin', text: 'Anfahrt' };
+            let progress = 0
+            let status = { key: 'startBegin', text: 'Anfahrt' }
 
             if (fb.startBegin) {
-                progress = 0.25;
-                status = { key: 'startEnd', text: 'Ankunft Abholort' };
+                progress = 0.25
+                status = { key: 'startEnd', text: 'Ankunft Abholort' }
             }
             if (fb.startEnd) {
-                progress = 0.5;
-                status = { key: 'ziel', text: 'Abfahrt' };
+                progress = 0.5
+                status = { key: 'ziel', text: 'Abfahrt' }
             }
             if (fb.ziel) {
-                progress = 0.75;
-                status = { key: 'zielBegin', text: 'Ankunft Zielort' };
+                progress = 0.75
+                status = { key: 'zielBegin', text: 'Ankunft Zielort' }
             }
             if (fb.zielBegin) {
-                progress = 1;
-                status = { key: 'frei', text: 'Frei' };
+                progress = 1
+                status = { key: 'frei', text: 'Frei' }
             }
             if (fb.frei) {
-                progress = 1;
-                status = { key: 'startBegin', text: 'Anfahrt' };
+                progress = 1
+                status = { key: 'startBegin', text: 'Anfahrt' }
             }
 
-            this._progress = { ...this._progress, [fb._id]: progress }
-            this._tripState = { ...this._tripState, [fb._id]: status }
+            this._progress[fb._id] = progress
+            this._tripState[fb._id] = status
         },
         async setStatus( { fbId, status }: { fbId?: string, status?: string } ) {
             const fahrzeugeStore    = useFahrzeugeStore();
@@ -165,9 +160,9 @@ export const useMenuStore = defineStore('menuStore', {
             if (status !== 'zielBegin' && status !== 'sonderrechte' && status !== 'pause' && navItem.value.length  === 0) {
                 status = 'frei';
             }
-            //TODO
-            // if (status !== 'zielBegin' && status !== 'sonderrechte' && status !== 'pause' && status === 'pause' && this._item.status === 'pause')
-            //     status = 'frei';
+
+            if (status !== 'zielBegin' && status !== 'sonderrechte' && status !== 'pause' && status === 'pause' && this._item.status === 'pause')
+                status = 'frei';
             
             if ( status === 'logout' )
                 status = '';
@@ -194,10 +189,9 @@ export const useMenuStore = defineStore('menuStore', {
 
             if (status === 'sonderrechte') {
                 this._item.sonderrechte = true;
-                //return;
             }
     
-            if ( status !== 'zielBegin' )
+            if ( status !== 'zielBegin' && status !== 'sonderrechte' )
                 this._item.status = status || ''
 
             if (this._item.status === 'pause')
@@ -231,7 +225,9 @@ export const useMenuStore = defineStore('menuStore', {
             }
 
             if ( status === 'sonderrechte' ) {
+                console.log('1111', data)
                 data.status.sonderrechte = 1;
+                navItem.value[0].sonderrechte = 1;
                 io.value.emit( 'setSonderrechte', data );
             } else {
                 io.value.emit('setCarStatus', data);

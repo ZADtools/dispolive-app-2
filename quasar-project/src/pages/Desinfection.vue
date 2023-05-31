@@ -460,21 +460,6 @@ function setDesiArt() {
     //resetForm(true)
 }
 
-function groupBy (array: any, key: string) {
-    const result: any =  {}
-
-    array.forEach((item: any) => {
-        const group = item[key];
-
-        if (!result[group])
-            result[group] = [];
-
-        result[group].push(item);
-    });
-
-    return result;
-}
-
 function createObj( newVal: any ) {
     newVal.forEach((item: any) => {
         if (item.bereich === 'Fahrerkabine') {
@@ -499,7 +484,7 @@ function createObj( newVal: any ) {
     progress.value = extend(true, {}, defaultProgress);
     form.value = extend( true, {}, defaultForm);
     if (newVal) {
-        const arr = groupBy(newVal, 'sort')
+        const arr = global.groupBy(newVal, 'sort')
         desiBereich.value = arr;
     }
 }
@@ -536,7 +521,7 @@ async function saveData () {
             const navPoint = { ...fb.item, desiProt: true  }
             //TODO
             //accountStore.globalDispatcher(navPoint)
-            //fahrberichtStore.updateItem(navPoint)
+            fahrberichtStore.updateItem(navPoint)
 
             log('formdata', data)  
         }

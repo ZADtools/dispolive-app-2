@@ -144,6 +144,7 @@ onBeforeMount( async () => {
 function setNavigation ( value: any ) {
     LocalStorage.set('navigation', value );
     accountStore.setStandartNavigation();
+    navi.value = value
 
     Notify.create({
         type: 'positive',

@@ -89,7 +89,7 @@
 <script setup lang="ts">
 import { ref, onMounted }                                       from 'vue';
 import { useRouter }                                            from 'vue-router';
-import { LocalStorage, Notify, Dark }                           from 'quasar';
+import { LocalStorage, Notify, Dark, Loading }                           from 'quasar';
 import CustLayout                                               from 'src/components/Layout.vue';
 import { version }                                              from '../../package.json';
 import { accountService }                                       from 'src/services/account.service';
@@ -122,13 +122,15 @@ const {
     device: appDevice, 
     connected, 
     darkMode,
-    errorVersion
+    errorVersion,
 } = storeToRefs( useAccountStore() )
 const auditStore    = useAuditStore();
 
 async function doLogin() {
     try {
+        accountStore.loading(true)
         await accountStore.login(form.value);
+        accountStore.loading(false)
         if (!loggedIn.value)
             Notify.create({
                 type: 'negative',
@@ -139,11 +141,10 @@ async function doLogin() {
                 color: 'negative',
                 classes: 'glossy',
             })
-        else {
-            //TODO
+        else
             router.push('/carlist');
-        }
     } catch ( err ) {
+        accountStore.loading(true)
         log( 'login error', err )
         let text = '';
         if (err === 'Error: Network Error')

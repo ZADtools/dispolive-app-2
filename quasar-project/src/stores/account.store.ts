@@ -1,13 +1,13 @@
-import { defineStore, storeToRefs }                 from 'pinia';
+import { defineStore, storeToRefs, getActivePinia }                 from 'pinia';
 import { Network }                                  from '@capacitor/network';
 import { Device }                                   from '@capacitor/device';
 import { AppLauncher }                              from '@capacitor/app-launcher';
 import { StatusBar, Style }                         from '@capacitor/status-bar';
 import { Keyboard }                                 from '@capacitor/keyboard';
+import { BackgroundGeolocationPlugin }              from '@capacitor-community/background-geolocation';
 import debug                                        from 'debug';
-import { LocalStorage, openURL, Notify, Dark }      from 'quasar'
+import { LocalStorage, openURL, Notify, Dark, QSpinnerOval, Loading }      from 'quasar'
 import { accountService }                           from '../services/account.service';
-//import BackgroundGeolocation                        from '@transistorsoft/capacitor-background-geolocation';
 import { useFahrberichtStore }                      from './fahrbericht.store';
 import { useNavStore }                              from './nav.store';
 import { useInventarStore }                         from './inventar.store';
@@ -19,6 +19,10 @@ import { useMessengerStore }                        from './messenger.store';
 import { useSocketStore }                           from './socket.store';
 import { version }                                  from '../../package.json';
 import { useFahrzeugeStore }                        from './fahrzeuge.store';
+import { useMenuStore }                             from './menu.store';
+import {registerPlugin}                             from '@capacitor/core';
+const BackgroundGeolocation = registerPlugin<BackgroundGeolocationPlugin>('BackgroundGeolocation');
+
 const log                                           = debug('app:account.module');
 
 export interface IDevice {
@@ -28,6 +32,7 @@ export interface IDevice {
     operatingSystem?:    string;
     appVersion?:         string;
     platform?:           string;
+    isVirtual?:          boolean;
 }
 
 export interface IUser {
@@ -75,6 +80,14 @@ export interface IGeoPos {
     timestamp: number | null,
     sessionID: string | null
 }
+
+interface ILoadingDefault {
+    spinner: any;
+    spinnerColor: string;
+    spinnerSize: number;
+    backgroundColor: string;
+    messageColor: string;
+}
 export interface IAccountState {
     _geolocationWatchId: string;
     _device:             IDevice;
@@ -104,6 +117,9 @@ export interface IAccountState {
     _packVersion:        string;
     _appCarNote:         any;
     _progressBarLoad:    boolean;
+    _loadingDefault:     ILoadingDefault;
+    _logoutDialog:       boolean;
+    _BackgroundGeolocationId: string;
 }
 
 export const useAccountStore = defineStore('accountStore', {
@@ -146,7 +162,16 @@ export const useAccountStore = defineStore('accountStore', {
         _lockDevice:         false,
         _callDialog:         false,
         _errorVersion:       false,
-        _progressBarLoad:    false
+        _progressBarLoad:    false,
+        _loadingDefault:     {
+            spinner: QSpinnerOval,
+            spinnerColor: 'secondary',
+            spinnerSize: 100,
+            backgroundColor: 'grey-9',
+            messageColor: 'white'
+        },
+        _logoutDialog:       false,
+        _BackgroundGeolocationId: ''
     }),
     getters: {
         device:             state => state._device,
@@ -176,8 +201,16 @@ export const useAccountStore = defineStore('accountStore', {
         errorVersion:       state => state._errorVersion,
         version:            state => state._version,
         progressBarLoad:    state => state._progressBarLoad,
+        loadingDefault:     state => state._loadingDefault,
+        logoutDialog:       state => state._logoutDialog
     },
     actions: {
+        loading (value: boolean) {
+            if ( value )
+                Loading.show(this._loadingDefault);
+            else
+                Loading.hide();
+        },
         setPauseDialog ( value: boolean ) {
             this._pauseDialog = value;
         },
@@ -282,13 +315,13 @@ export const useAccountStore = defineStore('accountStore', {
             if ( this._device.platform === 'ios' )
                 navApps.push({
                     name:       'Karten',
-                    installed:  !applemaps.value,
+                    installed:  applemaps.value,
                     scheme: 'maps.apple.com/'
                 })
 
             this._navApps = navApps;
         },
-        async getMyLocation( ) {
+        async getMyLocation( acknowledge: any ) {
             if ( !this._connected ) {
                 Notify.create({
                     type: 'negative',
@@ -302,10 +335,11 @@ export const useAccountStore = defineStore('accountStore', {
 
                 return;
             }
-            //TODO
-            // const socket = rootGetters['socket/io'];
 
-            // await socket.emit( 'sendGeo', state.geoPos, acknowledge );
+            const socketStore = useSocketStore();
+            const { io } = storeToRefs(socketStore);
+
+            await io.value.emit( 'sendGeo', this.geoPos, acknowledge );
 
             Notify.create({
                 type: 'postive',
@@ -335,102 +369,33 @@ export const useAccountStore = defineStore('accountStore', {
         },
         async startGeoPosWatch( ) {
             log('startGeoPosWatch')
-            //TODO
-            // if ( this._device.platform === 'ios' ) {
-            //     await BackgroundGeolocation.ready({
-            //         disableMotionActivityUpdates: true, //Fitness data
-            //         heartbeatInterval: 60,
-            //         stopTimeout: 14,
-            //         enableHeadless: true,
-            //         stopOnTerminate: false,
-            //         preventSuspend: true,
-            //         desiredOdometerAccuracy: 10,
-            //         distanceFilter: 0,
-            //         locationUpdateInterval: 1000,
-            //         disableStopDetection: true,
-            //         pausesLocationUpdatesAutomatically: false,
-            //         debug: false,
-            //         desiredAccuracy: BackgroundGeolocation.DESIRED_ACCURACY_HIGH,
-            //         locationAuthorizationRequest: 'Always',
-            //         backgroundPermissionRationale: {
-            //         title: '{applicationName} erlauben, die Standortdaten zu lesen?',
-            //             message: '',
-            //             positiveAction: 'Ändern auf: {backgroundPermissionOptionLabel}',
-            //             negativeAction: 'Abbrechen'
-            //         },
-            //         //disableLocationAuthorizationAlert: false
-            //         locationAuthorizationAlert: {
-            //             titleWhenNotEnabled: "Geolocation 'Immer' ist nicht aktiviert",
-            //             titleWhenOff: 'Geolocation ist ausgeschaltet',
-            //             instructions: "Bitte gehen Sie in die Einstellungen und schalten Sie 'Standort -> immer' an",
-            //             cancelButton: 'Abbrechen',
-            //             settingsButton: 'Einstellungen'
-            //         }
-            //     }).then( async () => {
-            //         BackgroundGeolocation.start();  
-
-            //         BackgroundGeolocation.setConfig({
-            //             locationAuthorizationRequest: 'Always'
-            //         });
-
-            //         await this.getLocationNow()
-            //     });
-            // } else {
-            //     await BackgroundGeolocation.ready({
-            //         disableMotionActivityUpdates: true, //Fitness Tracker
-            //         heartbeatInterval: 60,
-            //         stopTimeout: 14,
-            //         enableHeadless: true,
-            //         stopOnTerminate: true,
-            //         preventSuspend: true,
-            //         desiredOdometerAccuracy: 10,
-            //         distanceFilter: 0,
-            //         locationUpdateInterval: 1000,
-            //         disableStopDetection: true,
-            //         pausesLocationUpdatesAutomatically: false,
-            //         debug: false,
-            //         desiredAccuracy: BackgroundGeolocation.DESIRED_ACCURACY_HIGH,
-            //         locationAuthorizationRequest: 'WhenInUse',
-            //         backgroundPermissionRationale: {
-            //         title: '{applicationName} erlauben, die Standortdaten zu lesen?',
-            //             message: '',
-            //             positiveAction: 'Ändern auf: {backgroundPermissionOptionLabel}',
-            //             negativeAction: 'Abbrechen'
-            //         },
-            //         //disableLocationAuthorizationAlert: false
-            //         locationAuthorizationAlert: {
-            //             titleWhenNotEnabled: "Geolocation 'Beim verwenden' ist nicht aktiviert",
-            //             titleWhenOff: 'Geolocation ist ausgeschaltet',
-            //             instructions: "Bitte gehen Sie in die Einstellungen und schalten Sie 'Standort -> immer' an",
-            //             cancelButton: 'Abbrechen',
-            //             settingsButton: 'Einstellungen'
-            //         }
-            //     }).then( async () => {
-            //         BackgroundGeolocation.start();  
-
-            //         BackgroundGeolocation.setConfig({
-            //             locationAuthorizationRequest: 'Always'
-            //         });
-                 
-            //         this.getLocationNow()
-            //     });
-            // }
-
-            // BackgroundGeolocation.changePace(true);
-
-            // BackgroundGeolocation.onHeartbeat(({ location }: { location: any }) => {
-            //     if ( this._loggedIn ) {
-            //         this.sendCoords(location)
-            //     }
-            // });
-        
-            // const geolocationWatchId =  BackgroundGeolocation.onLocation(async (location: any) => {
-            //     this.sendCoords(location)
-            // }, ( error: any ) => {
-            //     log('[location] ERROR: ', error);
-            // });
-
-            // this._geolocationWatchId = geolocationWatchId;
+            const sendCoords = this.sendCoords
+            BackgroundGeolocation.addWatcher(
+                {
+                    backgroundMessage: 'Cancel to prevent battery drain.',
+                    backgroundTitle: 'Tracking You.',
+                    requestPermissions: true,
+                    distanceFilter: 0
+                },
+                function callback(location: any, error: any) {
+                    if (error) {
+                        if (error.code === 'NOT_AUTHORIZED') {
+                            if (window.confirm(
+                                'This app needs your location, ' +
+                                'but does not have permission.\n\n' +
+                                'Open settings now?'
+                            )) {
+                                BackgroundGeolocation.openSettings();
+                            }
+                        }
+                        return console.error(error);
+                    }
+            
+                    sendCoords({ location: { coords: location } })
+                }
+            ).then( (id) => {
+                this._BackgroundGeolocationId = id;
+            } );
         },
         setLockDevice ( data: boolean ) {
             this._lockDevice = data;
@@ -450,21 +415,16 @@ export const useAccountStore = defineStore('accountStore', {
                         longitude:  location.coords && location.coords.longitude,
                         latitude:   location.coords && location.coords.latitude
                     },
-                    timestamp:  location.timestamp,
+                    timestamp:  location.coords.time,
                     sessionID
                 }
 
                 this._geoPos = cord;
-                //TODO
-                //const socketStore = useSocketStore();
-                //socketStore.io.emit( 'getCarPos', cord )
+                const socketStore = useSocketStore();
+                const { io } = storeToRefs(socketStore);
+
+                io.value.emit( 'getCarPos', cord )
             }
-        },
-        async getLocationNow( ) {
-            log('test')
-            //TODO
-            //const location = await BackgroundGeolocation.getCurrentPosition({});
-            //this.sendCoords(location)
         },
         sendAppCarNote( data: { text: string, car: string  } ) {
             log('test', data)
@@ -475,11 +435,12 @@ export const useAccountStore = defineStore('accountStore', {
         },
         msgRead( data: any ) {
             log('test')
-            //TODO
-            // const socketStore = useSocketStore();
-            // socketStore.io.emit( 'msgRead', data )
+            const socketStore = useSocketStore();
+            const { io } = storeToRefs(socketStore);
+            io.value.emit( 'msgRead', data )
         },
         async startNetworkWatch( ) {
+            const auditStore = useAuditStore();
             const stat = await Network.getStatus();
             this._connected = stat.connected;
 
@@ -487,9 +448,8 @@ export const useAccountStore = defineStore('accountStore', {
                 log('networkStatusChange', status)
                 this._connected = status.connected;
 
-                //TODO
-                // if (status.connected)
-                //     dispatch('audit/sendData', {}, {root: true});
+                if (status.connected)
+                    auditStore.sendData();
             });
         },
         async compareVersion( ) {
@@ -508,13 +468,23 @@ export const useAccountStore = defineStore('accountStore', {
         },
         async globalDispatcher ( item: any ) {
             log('globalDispatcher', item)
-            //TODO
-            // await dispatch('mainmenu/setProgress', item, {root: true})
-            // await dispatch('trips/updateItem', item, {root: true})
-            // await dispatch('nav/updateNavPoint', item, {root: true})
-            
-            // await dispatch(item._id + '/updateItem', item, {root: true})
-            // await dispatch(item._id + '/setAcceptItem', item, {root: true} );
+            const menuStore = useMenuStore();
+            const fahrberichteStore = useFahrberichteStore();
+            const navStore = useNavStore();
+            if ( item._id ) {
+                const allStores = getActivePinia()._s
+                if (allStores.get(item._id)) {
+                    const useDynamicstore = defineStore(item._id, {})
+                    const dynamicStore: any = useDynamicstore();
+                    if (dynamicStore._exists) {
+                        dynamicStore.updateItem(item)
+                        //dynamicStore.setAcceptItem(item)
+                    }
+                }
+            }
+            menuStore.setProgress(item)
+            fahrberichteStore.updateItem(item)
+            navStore.updateNavPoint(item)
         },
         async init( ) {
             try {
@@ -585,7 +555,7 @@ export const useAccountStore = defineStore('accountStore', {
             //     store.value.unregisterModule( trip.item._id );
             //     // dispatch( 'setSelectedNavPoint', navigation[0]);
             // });
-            //Network.removeAllListeners();
+            Network.removeAllListeners();
             
             const inventarStore = useInventarStore();
             inventarStore.clearData();
@@ -612,8 +582,7 @@ export const useAccountStore = defineStore('accountStore', {
             messengerStore.deleteIndex();
             messengerStore.remove();
 
-            //TODO
-            //BackgroundGeolocation.stop();  
+            BackgroundGeolocation.removeWatcher({id: this._BackgroundGeolocationId});  
             await accountService.logout( { sessionID: this._sessionId } );
             const socketStore = useSocketStore();
             socketStore.remove();

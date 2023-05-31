@@ -5,13 +5,20 @@ import { accountService }               from 'src/services/account.service';
 const log       = Debug('app:settings.module');
 
 export interface ISettingsItem {
-    _id?:           string;   
-    inventarIntervall?: number; 
-    showAusrueckzeit?: boolean;
-    zuweisZeit?:    boolean;
-    noCustomMessage?: boolean;
+    _id?:                       string;   
+    inventarIntervall?:         number; 
+    showAusrueckzeit?:          boolean;
+    zuweisZeit?:                boolean;
+    noCustomMessage?:           boolean;
+    changeStartTarget?:         number;
+    changeInfektion?:           number;
+    adress?:                    string;
+    dataNotCompleteWarn?:       number;
+    transportscheinFalseWarn?:  number;
+    costStatusAnzeigen?:        boolean;
+    desiProtErz?:               number;
+    ipadEventEdit?:             number;
 }
-
 export interface ISettingsState {
     _item:          ISettingsItem
 }

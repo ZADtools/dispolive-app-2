@@ -5,6 +5,7 @@ import { IFahrbericht }                 from './menu.store';
 const log       = Debug('app:nav.module');
 log('start')
 export interface INav {
+    _id?:            string;
     link?:          string;
     icon:           string;
     color:          string;
@@ -13,17 +14,18 @@ export interface INav {
     type:           string;
     item?:          IFahrbericht;
     title:          string;
+    sonderrechte?:  number;
 }
 
 export interface INavState {
     _data:       any | [];
-    _selected:   any;
+    _selected:   INav | null;
 }
 
 export const useNavStore = defineStore('navStore', {
     state: (): INavState => ({
         _data:                   [],
-        _selected:               '',
+        _selected:               null
     }),
     getters: {
         data: (state) => state._data,
@@ -40,14 +42,12 @@ export const useNavStore = defineStore('navStore', {
             this._selected = point;
         },
         async updateNavPoint( fahrbericht: IFahrbericht ) {
-            const title      =  await this.setTitle(fahrbericht);
-
             const newStateItem: any = [];
             
-            this._data.forEach( async ( item: INav ) => {
+            this._data.forEach(( item: INav ) => {
                 if ( item.item?._id === fahrbericht._id ) {
                     const fb = { ...item.item, ...fahrbericht };
-                    
+                    const title      =  this.setTitle(fb);
                     const data = { ...item, ...{ item: fb }, title  };
                     newStateItem.push(data)
                 } else 
@@ -63,7 +63,7 @@ export const useNavStore = defineStore('navStore', {
             const exist = this._data.find( ( stat: any ) => stat.item._id === item._id);
             
             if (!exist) {
-                const title      =  await this.setTitle(item);
+                const title      =  this.setTitle(item);
 
                 const navPoint: INav = { 
                     type: item.type, 
@@ -75,16 +75,16 @@ export const useNavStore = defineStore('navStore', {
                 }
 
                 if ( item )
-                    navPoint.link       = `tripNow/${item._id}`;
+                    navPoint.link       = `fahrberichtactiv/${item._id}`;
             
                 this._selected  = { ...navPoint };
                 this._data.push(navPoint);
             }
         },
-        async removeNavPoint( item: INav ) {
+        async removeNavPoint( item: { _id: string } ) {
             this._data = this._data.filter( ( obj: any ) => obj.item._id !== item._id )
         },
-        async setTitle ( item: IFahrbericht ) {
+        setTitle ( item: IFahrbericht ) {
             let title = (item.patSurname ? item.patSurname : '') + (item.patName ? (', '  + item.patName) : '')
 
             if ( !item.patSurname && !item.patName )

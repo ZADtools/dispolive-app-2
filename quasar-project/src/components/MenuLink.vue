@@ -36,42 +36,6 @@
                     Sonderrechte
                 </q-bar>
                 <q-form greedy no-error-focus ref="specialRightsForm">
-                    <div class="row q-px-xl q-py-sm" v-if="navItems.length > 1">
-                        <div class="col-12">
-                            <q-select 
-                                filled 
-                                use-chips
-                                v-model="selectedFahrten" 
-                                :options="navItems" 
-                                label="Fahrten..."
-                                emit-value
-                                map-options
-                                multiple
-                                :rules="[ val => val.length > 0 || 'Bitte wählen Sie mindestens 1 Fahrt aus' ]"
-                            >
-                                <template v-slot:option="scope">
-                                    <q-item
-                                        v-if="scope.opt.item.type !== 'Linie'"
-                                        v-bind="scope.itemProps"
-                                        v-on="scope.itemEvents">
-                                        <q-item-section >
-                                            <q-item-label class="text-body1"> {{scope.opt.patSurname}} {{scope.opt.patName}} <span class="text-negative">{{scope.opt.sonderrechte ? '(bereits eingeschaltet)' : ''}}</span></q-item-label>
-                                        </q-item-section>
-                                    </q-item>
-                                </template>
-                                <template v-slot:selected-item="scope">
-                                    <q-chip
-                                        @remove="scope.removeAtIndex(scope.index)"
-                                        v-bind="scope.itemProps"
-                                        v-on="scope.itemEvents"
-                                        removable>
-                                        {{scope.opt.patSurname}} {{scope.opt.patName}}
-                                        
-                                    </q-chip>
-                                </template>
-                            </q-select>
-                        </div>
-                    </div>
                     <div class="row q-px-xl q-py-sm">
                         <div class="col-12">
                             <q-input inputmode="text" type="textarea" filled label-color="primary" autogrow v-model="specialRightText" label="S. Bemerkung"/>
@@ -105,7 +69,7 @@ import { useFahrzeugeStore }                                from 'src/stores/fah
 import { useAuditStore }                                    from 'src/stores/audit.store';
 import { useDesiprotokolleStore }                           from 'src/stores/desiprotokolle.store';
 import { useRouter }                                        from 'vue-router';
-import { storeToRefs }                                      from 'pinia';
+import { storeToRefs, defineStore }                         from 'pinia';
 
 const log                                                   = debug('app:MenuLink');
 
@@ -179,22 +143,24 @@ function setSpecialRights () {
         if ( success && selectedCar.value ) {
             confirmSpecialRights.value = false;
 
-            for ( const fb of selectedFahrten.value ) {
+            if (navItems.value.length === 1 ) {
+                const item = navItems.value[0].item;
                 const data = {
-                    _id:            fb._id,
+                    _id:            item._id,
                     car:            selectedCar.value._id,
                     sonderrechte:   1,
                     status:         'sonderrechte'
                 }
 
                 const sonderBemerkung = {
-                    _id:                fb._id,
+                    _id:                item._id,
                     sonderBemerkung:    specialRightText.value
                 }
-    
-                await auditStore.setItem({ type:'zeitstempel', value: data });
-                await auditStore.setItem({ type:'sonderNotice', value: sonderBemerkung, noAlert: true });
-                await menuStore.setStatus({status: 'sonderrechte'});   
+                
+                await auditStore.setItem({ type:'zeitstempel', value: data })
+                await auditStore.setItem({ type:'sonderNotice', value: sonderBemerkung, noAlert: true })
+                await menuStore.setStatus({status: 'sonderrechte'})
+                menuStore.setSonderrechteApp()
             }
         }
     } )
@@ -203,7 +169,7 @@ function setSpecialRights () {
 function selectedMenuPoint ( item: any ) {
     let exists = getTitle.value === item.title;
 
-    if ( item.item && selectedNavPoint.value.item )
+    if ( item.item && selectedNavPoint.value?.item )
         exists =  selectedNavPoint.value.item._id === item.item._id
 
     return exists ? 'selected' : 'notSelected';
@@ -236,31 +202,7 @@ async function specialrights () {
         return 
     }
 
-    selectedFahrten.value = [];
-
     const selectedLinie = false;
-
-    if ( navItems.value.length === 1 ) {
-        //TODO
-        // if (!selectedFahrten.value.sonderrechte && !selectedFahrten.value.type !== 'Linie')
-        //     selectedFahrten.value.push(navItems.value[0].item);
-
-        // if ( selectedFahrten.value.type === 'Linie' )
-        //     selectedLinie = true;
-    } else {
-        //TODO
-        // navItems.value.every( item => {
-        //     if ( selectedFahrten.value.type === 'Linie' ) {
-        //         selectedLinie = true;
-        //         return false;
-        //     }
-
-        //     if (item.item && !item.item.sonderrechte && item.item.type !== 'Linie')
-        //         selectedFahrten.value.push(item.item);
-
-        //     return true;
-        // } )
-    }
 
     if (selectedLinie)
         noSpecialRightsAllowed.value = true;
@@ -273,11 +215,9 @@ async function specialrights () {
 async function clicked( item: any ) {
     navStore.setSelected( item )
 
-    if (item.item && item.item._id)
+    if (item.item && item.item._id) {
         fahrberichtStore.setActTrip( item.item );
-
-    // if (item.title && !item.function && item.title !== 'Logout')
-    //     accountStore.setTitle( item.title );
+    }
 
     if (item.function) {
         if ( item.function === 'specialrights' )
@@ -296,11 +236,9 @@ async function clicked( item: any ) {
     if (item.link)
         switch ( item.link) {
             case 'logout':
-                //TODO
-                //logoutDialog.value = true;
+                accountStore._logoutDialog = true;
                 break;
             default:
-                console.log('nav link', item.link)
                 router.push( `/app/${item.link}` )
                 break;
         }

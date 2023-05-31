@@ -4,4 +4,10 @@
     <string name="title_activity_main">dispolive App</string>
     <string name="package_name">capacitor.app.dispolive</string>
     <string name="custom_url_scheme">capacitor.app.dispolive</string>
+    <string name="capacitor_background_geolocation_notification_channel_name">
+        Background Tracking
+    </string>
+    <string name="capacitor_background_geolocation_notification_icon">
+        drawable/ic_tracking
+    </string>
 </resources>

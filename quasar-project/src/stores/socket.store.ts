@@ -66,7 +66,7 @@ export const useSocketStore = defineStore('socketStore', {
             return new Promise( ( resolve, reject) => {
                 try {
                     sockHdl.on('connect', () => {
-                        console.log('socket connected')
+                        log('socket connected')
                         this._connected = true;
       
                         const fahrberichteStore = useFahrberichteStore();

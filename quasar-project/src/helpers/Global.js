@@ -1,17 +1,20 @@
 import { useSettingsStore }                                 from 'src/stores/settings.store';
 import { useNavStore }                                      from 'src/stores/nav.store';
+import { useRouter }                                        from 'vue-router';
 import { useFahrberichtStore }                              from 'src/stores/fahrbericht.store';
 import dayjs                                                from 'dayjs';
 import debug                                                from 'debug';
-import { storeToRefs }                                      from 'pinia';
+import { storeToRefs, defineStore, getActivePinia }                         from 'pinia';
 const log                                                   = debug('app:Global');
 
 export default function Global() {
     const settingsStore = useSettingsStore();
-    const { data: settingsData } = storeToRefs(settingsStore);
+    const { item: settingsData } = storeToRefs(settingsStore);
 
     const navStore = useNavStore();
     const fahrberichtStore = useFahrberichtStore();
+
+    const router = useRouter();
 
     const navigation = [
         {
@@ -118,8 +121,12 @@ export default function Global() {
         }
     ];
 
+    function compareObjects (o1, o2) {
+        return JSON.stringify(o1) === JSON.stringify(o2);
+    }
+
     function showEaSum (actItem) {
-        if ( settingsData.value.eaAnzeigen && actItem.eigenanteil === '10' )
+        if ( settingsData.value?.eaAnzeigen && actItem.eigenanteil === '10' )
             return (actItem.eaSum * 1).toFixed(2).replace('.', ',') + ' €';
         else
             return '';
@@ -129,13 +136,23 @@ export default function Global() {
         navStore.setSelected(navigation[0]);
     }
 
+    function removeStore ( id ) { 
+        const allStores = getActivePinia()._s
+        const store = allStores.get(id)
+        if ( store )
+            store.$dispose()
+    }
+
     function tripAbort ( id ) {
-        //TODO
-        //store.value.unregisterModule( id );
+        if ( !id ) {
+            console.log('tripAbort no ID')
+            return
+        }
+        removeStore(id)
         setSelectedNavPoint();
-        
-        fahrberichtStore.setShowItem()
-        fahrberichtStore.removeNavPoint( {_id: id} );
+        navStore.removeNavPoint( {_id: id} );
+        router.push( '/app/fahrberichte' )
+        fahrberichtStore.removeSelectedItem();
     }
 
     function isDateValid(val) {
@@ -148,11 +165,33 @@ export default function Global() {
         return true;
     }
 
+    function groupBy (array, key) {
+        const result =  {}
+    
+        array.forEach((item) => {
+            const group = item[key];
+    
+            if (!result[group])
+                result[group] = [];
+    
+            result[group].push(item);
+        });
+    
+        return result;
+    }
+
+    function toPairs (obj) {
+        return Object.keys(obj).map((key) => [key, obj[key]]);
+    }
+
     return {
         navigation,
         showEaSum,
         tripAbort,
         setSelectedNavPoint,
-        isDateValid
+        isDateValid,
+        compareObjects,
+        groupBy,
+        toPairs
     }
 }

@@ -104,7 +104,6 @@ onBeforeMount(() => {
 });
 
 function confirmAbort() {
-    console.log(Object.keys(form.value.items))
     if (Object.keys(form.value.items).length !== 0)
         confirmAbortDialog.value = true;
     else

@@ -151,7 +151,6 @@ export const useMessengerStore = defineStore('messengerStore', {
                     } 
                 } );
 
-                console.log('11111', messages)
                 if (messages.data)
                     messages.data.forEach( ( message: any ) => {
                         message.send = true

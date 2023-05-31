@@ -63,7 +63,6 @@
                 </q-drawer>
             </template>
             <template #content>
-                <!-- TODO keepalive -->
                 <router-view v-slot="{ Component }">
                     <KeepAlive include="Desinfection">
                         <component :is="Component" />
@@ -71,9 +70,9 @@
                 </router-view>
             </template>
         </cust-layout>
-        <Dialog text="Möchten Sie sich wirklich ausloggen?" :modelValue="logoutDialog" :func="callLogout" @update:modelValue="(val) => logoutDialog = val"  />
+        <Dialog text="Möchten Sie sich wirklich ausloggen?" :modelValue="logoutDialog" :func="callLogout" @update:modelValue="(val) => accountStore._logoutDialog = val"  />
         <Dialog text="Möchten Sie wirklich den Rückruf eines Disponenten anfordern?" :modelValue="callDialog" :func="menuStore.callDisposition" @update:modelValue="(val) => accountStore.setCallDialog(val)"  />
-        <Dialog v-if="pauseDialog" text="Sie haben mindestens eine aktive Fahrt! Sie können nicht in die Pause gehen!" :modelValue="pauseDialog" okLabel="Ok" :abortShow="false" @input="(val) => accountStore.setPauseDialog(val)"  />
+        <Dialog v-if="pauseDialog" text="Sie haben mindestens eine aktive Fahrt! Sie können nicht in die Pause gehen!" :modelValue="pauseDialog" okLabel="Ok" :abortShow="false" @update:modelValue="(val) => accountStore.setPauseDialog(val)"  />
         <Dialog v-if="informPause" text="Sie wurden von der Leitstelle in die Pause geschickt!" :modelValue="informPause" okLabel="Ok" :abortShow="false" @update:modelValue="(val) => menuStore.informStatusPause(val)"  />
         <Dialog text="Eine Ihrer Fahrten wurde geändert. Bitte prüfen!" :abortShow="false" okLabel="OK" :modelValue="adressChange" @update:modelValue="(val) => menuStore.setAdressChange(val)"  />
         <Dialog 
@@ -98,7 +97,7 @@
 
 <script type="ts" setup>
 import { onBeforeMount, ref, watch, onUnmounted }                               from 'vue';
-import  { useRouter }                                                           from 'vue-router';
+import  { useRouter, useRoute }                                                           from 'vue-router';
 import MenuLink                                                                 from '../components/MenuLink.vue';
 import Global                                                                   from '../helpers/Global';
 import dayjs                                                                    from 'dayjs';
@@ -122,6 +121,7 @@ import { useInfektionenStore }                                                  
 import { useCoststatusStore }                                                   from 'src/stores/coststatus.store';
 import { useSonderleistungenStore }                                             from 'src/stores/sonderleistungen.store';
 import { useAudioStore }                                                        from 'src/stores/audio.store';
+import { useFahrberichtStore }                                                  from 'src/stores/fahrbericht.store';
 import { useCardreaderStore }                                                   from 'src/stores/cardreader.store';
 import { storeToRefs }                                                          from 'pinia';
 import CustLayout                                                               from 'src/components/Layout.vue';
@@ -137,7 +137,8 @@ const   {
             device,
             pauseDialog,
             lockDevice,
-            callDialog
+            callDialog,
+            logoutDialog
         } = storeToRefs(accountStore);
 
 const fahrzeugeStore  = useFahrzeugeStore();
@@ -153,7 +154,7 @@ const fahrberichteStore = useFahrberichteStore();
 const { actDay, lastDeletedItem } = storeToRefs(fahrberichteStore);
 
 const navStore = useNavStore();
-const { item: navItems, selected: selectedNavPoint } = storeToRefs(navStore);
+const { data: navItems, searchItem } = storeToRefs(navStore);
 
 const dienstplanStore = useDienstplanStore();
 const { pers } = storeToRefs(dienstplanStore);
@@ -175,15 +176,16 @@ const serienkategorienStore = useSerienKategorienStore();
 const infektionenStore = useInfektionenStore();
 const coststatusStore = useCoststatusStore();
 const sonderleistungenStore = useSonderleistungenStore();
+const fahrberichtStore = useFahrberichtStore();
 
-const   leftDrawerOpen          = ref(false),
-        logoutDialog            = ref(false),
-        loadedData              = ref(false);
+const   leftDrawerOpen          = ref(false)
+const   loadedData              = ref(false)
 
-const router                    = useRouter();
-const global                    = Global();
+const router                    = useRouter()
+const route                     = useRoute()
+const global                    = Global()
 
-const linksList = ref(global.navigation);
+const linksList = ref(global.navigation)
 
 onBeforeMount( async () => {
     const progressData = {
@@ -195,8 +197,6 @@ onBeforeMount( async () => {
     }
 
     const day = dayjs().format('YYYY-MM-DD')
-
-    Loading.show(progressData)
     
     try {
         dienstplanStore.setPers('')
@@ -252,7 +252,7 @@ onBeforeMount( async () => {
 
         loadedData.value = true;
 
-        Loading.hide();
+        accountStore.loading(false)
 
         const welcome = Notify.create({
             message: '<div class="text-bold">dispolive ist nun einsatzbereit.</div>Wir wünschen Ihnen einen angenehmen Arbeitstag.',
@@ -267,7 +267,7 @@ onBeforeMount( async () => {
             ]
         })
     } catch (err) {
-        Loading.hide();
+        accountStore.loading(false)
 
         Notify.create({
             message: '<div class="text-bold">Fehler beim laden der Daten!</div>Sie wurden zum Login weitergeleitet.',
@@ -337,19 +337,6 @@ watch( navItems, ( newVal ) => {
 
     if (newVal.length === 0)
         menuStore.setStatus({status: 'frei'});
-    
-    //check if navItem specalrights
-    if ( carStatus.value.sonderrechte ) {
-        let sonderrechteExists = false
-        newVal.forEach( ( nav ) => {
-            if ( nav.sonderrechte )
-                sonderrechteExists = true
-        } )
-
-        if (!sonderrechteExists) {
-            menuStore.setSonderrechteApp(false)
-        }
-    }
 
     if (newVal.length > 0) {
         const status = newVal.find( (item) => {
@@ -362,7 +349,7 @@ watch( navItems, ( newVal ) => {
         if (!status)
             menuStore.setStatus({status: 'zielBegin'});
     }
-} )
+}, { deep: true } )
 
 function callLogout() {
     accountStore.logout();

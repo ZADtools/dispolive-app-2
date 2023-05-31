@@ -5,6 +5,7 @@ const log       = Debug('app:coststatus.module');
 
 export interface ICoststatusItem {
     _id:            string;
+    status:         string;
 }
 
 export interface ICoststatusState { 

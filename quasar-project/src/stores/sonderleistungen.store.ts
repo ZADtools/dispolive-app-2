@@ -1,5 +1,6 @@
 import { defineStore }                              from 'pinia';
-import Debug                                        from 'debug';  
+import Debug                                        from 'debug'; 
+import { accountService }                           from 'src/services/account.service'; 
 
 const log       = Debug('app:sonderleistungen.module');
 
@@ -23,10 +24,10 @@ export const useSonderleistungenStore = defineStore('sonderleistungenStore', {
             log( 'getData' );
             
             try {
-                //TODO
-                // const data: any     = await accountService.getDataSocket( { rootGetters, event: 'getDefaultCol', param: { col: 'sonderleistungenKategorien' } } );
-    
-                // commit( 'setData', data.data );
+                const data: any     = await accountService.getDataSocket( { event: 'getDefaultCol', param: { col: 'sonderleistungenKategorien' } } );
+                
+                if ( Array.isArray(data?.data) )
+                    this._data = data.data
             } catch (error) {
                 log( 'Error getData', error );
                 this._data = [];
