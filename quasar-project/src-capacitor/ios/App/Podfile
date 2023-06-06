@@ -12,15 +12,19 @@ def capacitor_pods
   pod 'Capacitor', :path => '../../node_modules/@capacitor/ios'
   pod 'CapacitorCordova', :path => '../../node_modules/@capacitor/ios'
   pod 'CapacitorCommunityBackgroundGeolocation', :path => '../../node_modules/@capacitor-community/background-geolocation'
+  pod 'CapacitorCommunityBarcodeScanner', :path => '../../node_modules/@capacitor-community/barcode-scanner'
+  pod 'CapacitorCommunityFileOpener', :path => '../../node_modules/@capacitor-community/file-opener'
   pod 'CapacitorApp', :path => '../../node_modules/@capacitor/app'
   pod 'CapacitorAppLauncher', :path => '../../node_modules/@capacitor/app-launcher'
   pod 'CapacitorDevice', :path => '../../node_modules/@capacitor/device'
+  pod 'CapacitorFilesystem', :path => '../../node_modules/@capacitor/filesystem'
   pod 'CapacitorKeyboard', :path => '../../node_modules/@capacitor/keyboard'
   pod 'CapacitorLocalNotifications', :path => '../../node_modules/@capacitor/local-notifications'
   pod 'CapacitorNetwork', :path => '../../node_modules/@capacitor/network'
   pod 'CapacitorSplashScreen', :path => '../../node_modules/@capacitor/splash-screen'
   pod 'CapacitorStatusBar', :path => '../../node_modules/@capacitor/status-bar'
   pod 'CapgoNativeAudio', :path => '../../node_modules/@capgo/native-audio'
+  pod 'W4bRcr1010', :path => '../../../rcr1010'
 end
 
 target 'App' do

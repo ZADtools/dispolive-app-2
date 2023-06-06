@@ -1,5 +1,6 @@
 import { defineStore }                              from 'pinia';
-import Debug                                        from 'debug';  
+import Debug                                        from 'debug'; 
+import { accountService }                           from 'src/services/account.service';
 
 const log       = Debug('app:infektion.module');
 
@@ -24,11 +25,9 @@ export const useInfektionenStore = defineStore('infektionStore', {
     actions: {
         async getData( ) {
             log( 'getData' );
-            //TODO
             try {
-                // const data: any     = await accountService.getDataSocket( { rootGetters, event: 'getDefaultCol', param: { col: 'infektionen' } } );
-                
-                // commit( 'setData', data.data );
+                const data: any     = await accountService.getDataSocket( { event: 'getDefaultCol', param: { col: 'infektionen' } } );
+                this._data          = data.data || [];
             } catch (error) {
                 log( 'Error getData', error );
                 this._data = [];

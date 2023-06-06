@@ -16,7 +16,7 @@
             persistent
             transition-show="jump-right"
             transition-hide="jump-right">
-            <q-card class="bg-white" style="width: 700px;">
+            <q-card style="width: 700px;">
                 <q-bar class="q-pa-lg text-h6 text-white bg-primary">
                     Kontakt
                 </q-bar>
@@ -34,7 +34,7 @@
                     </div>
                 </div>
                 <q-separator />
-                <q-card-actions class="row q-px-lg q-py-sm bg-grey-3">
+                <q-card-actions class="row q-px-lg q-py-sm" :class="[Dark.isActive ? 'bg-grey-10' : 'bg-grey-3']">
                     <div class="col-6 q-px-sm">
                         <q-btn class="full-width text-body1" padding="6px" color="negative" v-close-popup label="Zurück" />
                     </div>
@@ -49,7 +49,7 @@
 
 <script lang="ts" setup>
 import { onMounted, ref, onBeforeUnmount, computed }        from 'vue';
-import { Platform, Dialog }                                 from 'quasar';
+import { Platform, Dialog, Dark }                                 from 'quasar';
 import  { usePatientenStore, IPatient }                     from 'src/stores/patienten.store';
 import  { useAccountStore }                                 from 'src/stores/account.store';
 import { storeToRefs }                                      from 'pinia';

@@ -1,6 +1,6 @@
 <template>
     <div>
-        <div class="row q-py-sm bg-white">
+        <div class="row q-py-sm" :class="[Dark.isActive ? 'bg-grey-10' : 'bg-white']">
             <div class="col-6" :key="showNav" :class="{ 'col-sm-4':  showNav, 'col-sm-6' : !showNav, 'q-pr-xs': $q.screen.gt.xs, 'q-pb-sm': $q.screen.lt.sm }">
                 <q-btn align="center" class="full-width text-body1" padding="6px" @click="showTripAbort()" color="negative" label="Fahrt Abbrechen" />
             </div>
@@ -73,8 +73,9 @@ import { useSettingsStore }                                         from 'src/st
 import { useAccountStore }                                          from 'src/stores/account.store';
 import { useAuditStore }                                            from 'src/stores/audit.store';
 import { useNavStore }                                              from 'src/stores/nav.store';
-import debug            from 'debug';
-import { storeToRefs } from 'pinia';
+import debug                                                        from 'debug';
+import { storeToRefs }                                              from 'pinia';
+import { Dark }                                                     from 'quasar';
 
 const log       = debug('app:FahrberichteStatusView');
 

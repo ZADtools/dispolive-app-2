@@ -1,12 +1,12 @@
 <template>
-    <div>
+    <div ref="scrollTarget" class="scrollHeight scroll-y">
         <q-infinite-scroll 
             ref="scrollList" 
             @load="onLoad" 
             reverse 
-            :offset="100"
-            class="scrollHeight"
+            :offset="500"
             :initial-index="index" 
+            :scroll-target="scrollTarget"
         >
             <template v-slot:loading>
                 <div class="row justify-center q-my-md">
@@ -40,7 +40,7 @@
                 </q-chat-message>
             </div>
         </q-infinite-scroll>
-        <q-page-sticky expand position="bottom" class="q-pl-sm q-pt-sm bg-white" >
+        <q-page-sticky expand position="bottom" class="q-pl-sm q-pt-sm" :class="[Dark.isActive ? 'bg-grey-10' : 'bg-white']" >
             <q-input class="col" :readonly="settings.noCustomMessage ? true : false" bottom-slots autogrow filled label-color="primary" v-model="message" stack-label label="Nachricht schreiben...">
                 <template v-slot:after>
                     <q-btn round dense flat icon="send" @click="sendMessage" />
@@ -51,8 +51,8 @@
 </template>
 
 <script lang="ts" setup>
-import { onBeforeMount, ref, watch}                                from 'vue';
-import { Notify, uid }                                                      from 'quasar';  
+import { onBeforeMount, ref, watch}                                         from 'vue';
+import { Notify, uid, Dark }                                                from 'quasar';  
 import { Keyboard }                                                         from '@capacitor/keyboard';
 import { useMessengerStore }                                                from 'src/stores/messenger.store';
 import { useFahrzeugeStore }                                                from 'src/stores/fahrzeuge.store';
@@ -65,10 +65,13 @@ import dayjs                                                                from
 import relativeTime                                                         from 'dayjs/plugin/relativeTime';
 dayjs.extend(relativeTime)
 const log                                                                   = debug('app:messages');
+dayjs.locale('de')
 
 const   message         = ref(''),
         scrollList      = ref(),
         timestamp       = ref();
+
+const scrollTarget      = ref();
 
 const messengerStore    = useMessengerStore();
 const { messages, index, scrollEnd, lastItem, selectedText } = storeToRefs(messengerStore);
@@ -100,10 +103,8 @@ watch( lastItem, ( newVal ) => {
 } )
 
 watch( selectedText, ( newVal ) => {
-    if ( newVal )
-        message.value = newVal
-
-    messengerStore.setSelectedText('')
+    if ( newVal && newVal.type === 'messenger' )
+        message.value = newVal.text
 } )
 
 async function onLoad (index: number, done: any) {
@@ -196,10 +197,14 @@ Keyboard.addListener('keyboardDidShow', () => {
 </script>
 
 <style scoped>
-.scrollHeight {
-    padding-bottom: 100px;
-    min-height: 100vh;
-    width: 100%;
-    overflow-x: hidden;
-}
+    .scrollHeight {
+        padding-bottom: 100px;
+        height: calc(100vh - 152px);
+        width: 100%;
+        overflow-x: hidden;
+    }
+
+    :deep(.q-field--dark .q-field__marginal) {
+        color: rgba(255, 255, 255, 0.7);
+    }
 </style>

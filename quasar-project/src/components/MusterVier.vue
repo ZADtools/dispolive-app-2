@@ -1,11 +1,11 @@
 <template>
-    <div class="regulation q-px-sm">
+    <div class="regulation q-px-sm text-black">
         <div class="row q-py-md q-px-sm">
             <div class="col-12 text-h6 header">Verordnung einer</div>
             <div class="col12 text-h6 header">Krankenbeförderung</div>
 
         </div>
-        <div class="row whiteBg q-px-sm redLine">
+        <div class="row whiteBg q-px-sm redLine text-black">
             <div class="col-4 col-md-3 ">
                 <div class="row redLabel">Gebühr {{getEigenanteil() == 'Kassiert' ? global.showEaSum(actItem) : ''}}</div>
                 <div class="row text-body1">{{getEigenanteil()}}</div>
@@ -19,7 +19,7 @@
                 <div class="row text-body1">{{actItem.krankenkasse}} {{actItem.ikNr}}</div>
             </div>
         </div>
-        <div class="row whiteBg q-px-sm redLine">
+        <div class="row whiteBg q-px-sm redLine text-black">
             <div class="col-12">
                 <div class="row redLabel">Name, Vorname des Versicherten</div>
                 <div class="row text-body1">{{actItem.patSurname}} {{actItem.patName}}</div>
@@ -34,7 +34,7 @@
                 <div class="row text-body1">{{actItem.birthday}}</div>
             </div>
         </div>
-        <div class="row whiteBg q-px-sm redLine">
+        <div class="row whiteBg q-px-sm redLine text-black">
             <div class="col-5">
                 <div class="row redLabel no-wrap">Kostenträgerkennung</div>
                 <div class="row text-body1">{{actItem.versNr}}</div>
@@ -48,7 +48,7 @@
                 <div class="row text-body1">{{actItem.versStatus}}</div>
             </div>
         </div>
-        <div class="row whiteBg q-px-sm">
+        <div class="row whiteBg q-px-sm text-black">
             <div class="col-4">
                 <div class="row redLabel text-no-wrap">Betriebsstätten-Nr.</div>
                 <div class="row text-body1">{{actItem.betriebsstaettenNummer}}</div>

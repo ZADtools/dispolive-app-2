@@ -1,6 +1,6 @@
 
 <template>
-    <q-layout :view="view" container class="layoutFormat" :class="[!Dark.isActive ? 'bg-teal-5' : 'bg-grey-10']" > 
+    <q-layout :view="view" container class="layoutFormat" :class="[isScanning ? 'transBG' : '', !Dark.isActive ? 'bg-teal-5' : 'bg-grey-10']" > 
         <q-header class="layoutHeader bg-primary text-white text-bold" :class="headerClass" v-if="header" >
             <slot name="header">
 
@@ -9,7 +9,7 @@
         <slot name="drawer">
 
         </slot>
-        <q-page-container>
+        <q-page-container v-show="!isScanning">
             <q-page class="scroll" ref="content" :class="[!Dark.isActive ? 'bg-white' : 'bg-dark', custClass]">
                 <slot name="content">
 
@@ -30,6 +30,7 @@ import { Platform, Dark, uid }          from 'quasar'
 import { useAccountStore }              from 'src/stores/account.store';
 import { storeToRefs }                  from 'pinia';
 import { useRouter }                    from 'vue-router';
+import { useCardreaderStore }           from 'src/stores/cardreader.store';
 
 const props = defineProps({
     view: String,
@@ -54,6 +55,9 @@ const props = defineProps({
 const accountStore = useAccountStore()
 const { secondHeader, title } = storeToRefs( accountStore )
 
+const cardReaderStore = useCardreaderStore()
+const { isScanning } = storeToRefs( cardReaderStore )
+
 let secondHeaderHeight = 0
 const firshHeaderHeight = 68
 const foot = ref(false)
@@ -66,7 +70,7 @@ router.beforeEach((to, from) => {
 })
 
 watch([secondHeader, title], ( newVal ) => {
-    if (  secondHeader.value === 'Fahrberichte' || secondHeader.value === 'contacts' || secondHeader.value === 'Messenger' || secondHeader.value === 'Desinfektion' || secondHeader.value === 'dienstplan' || secondHeader.value === 'missingdata' )
+    if (  secondHeader.value === 'Fahrberichte' || secondHeader.value === 'contacts' || secondHeader.value === 'Messenger' || secondHeader.value === 'Desinfektion' || secondHeader.value === 'dienstplan' || secondHeader.value === 'missingdata' || secondHeader.value === 'cardreader' )
         secondHeaderHeight = 45
     else
         secondHeaderHeight = 0
@@ -120,5 +124,9 @@ calcVar()
 
     .layoutHeader {
         margin-top: v-bind(paddingTop);
+    }
+
+    .transBG {
+        background-color: transparent !important;
     }
 </style>

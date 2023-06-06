@@ -1,6 +1,6 @@
 <template>
-    <div>
-        <cust-layout view="lHh Lpr lFf" :class="[(isScanning ? 'bg-transparent' : '')]" :headerClass="'q-pa-none'" >
+    <div >
+        <cust-layout view="lHh Lpr lFf" headerClass="q-pa-none" >
             <template #header>
                 <q-dialog v-model="lockDevice" v-if="lockDevice" persistent class="unlockDialog">
                     <q-card style="background: 'transparent'">
@@ -30,11 +30,11 @@
                     
                     <q-btn flat dense round icon="lock" aria-label="Menu" @click="setLockDevice" />
                 </q-toolbar>
-                <second-header v-if="!isScanning && secondHeader" />
+                <second-header v-if="secondHeader" />
             </template>
             <template #drawer>
-                <q-drawer v-if="!isScanning" v-model="leftDrawerOpen" show-if-above bordered class="menu-drawer">
-                    <div class="row bg-grey-1 logoCont">
+                <q-drawer v-model="leftDrawerOpen" v-if="!isScanning" show-if-above bordered class="menu-drawer">
+                    <div class="row logoCont" :class="[Dark.isActive ? '' : 'bg-grey-1']">
                         <div class="col text-center q-pt-sm">
                             <img id="logo" src="~assets/dispologo.png" style="width: 100px;" />
                         </div>
@@ -103,7 +103,7 @@ import Global                                                                   
 import dayjs                                                                    from 'dayjs';
 import Dialog                                                                   from '../components/Dialog.vue';
 import SecondHeader                                                             from 'src/components/SecondHeader.vue';
-import { QSpinnerOval, Loading, Notify }                                        from 'quasar';
+import { QSpinnerOval, Dark, Notify }                                           from 'quasar';
 import { useAccountStore }                                                      from 'src/stores/account.store';
 import { useFahrzeugeStore }                                                    from 'src/stores/fahrzeuge.store';
 import { useInventarStore }                                                     from 'src/stores/inventar.store';
@@ -123,6 +123,7 @@ import { useSonderleistungenStore }                                             
 import { useAudioStore }                                                        from 'src/stores/audio.store';
 import { useFahrberichtStore }                                                  from 'src/stores/fahrbericht.store';
 import { useCardreaderStore }                                                   from 'src/stores/cardreader.store';
+import { useSocketStore }                                                       from 'src/stores/socket.store';
 import { storeToRefs }                                                          from 'pinia';
 import CustLayout                                                               from 'src/components/Layout.vue';
 import debug                                                                    from 'debug';
@@ -130,16 +131,16 @@ const log                                                                       
 
 const accountStore                                                             = useAccountStore();
 const   { 
-            title, 
-            secondHeader, 
-            appCarNote, 
-            connected:          networkConnected,
-            device,
-            pauseDialog,
-            lockDevice,
-            callDialog,
-            logoutDialog
-        } = storeToRefs(accountStore);
+    title, 
+    secondHeader, 
+    appCarNote, 
+    connected:          networkConnected,
+    device,
+    pauseDialog,
+    lockDevice,
+    callDialog,
+    logoutDialog
+} = storeToRefs(accountStore);
 
 const fahrzeugeStore  = useFahrzeugeStore();
 const { item: selectedCar } = storeToRefs(fahrzeugeStore);
@@ -284,8 +285,8 @@ onBeforeMount( async () => {
 });
 
 onUnmounted( () => {
-    //TODO
-    //useSocketStore.remove();
+    const socketStore = useSocketStore();
+    socketStore.remove();
 } )
 
 function toogleLeftDrawer () {

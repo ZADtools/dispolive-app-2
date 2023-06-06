@@ -3,7 +3,12 @@ import Debug                                        from 'debug';
 import dayjs                                        from 'dayjs';
 import { useNavStore, INav }                        from './nav.store';
 import { IFahrbericht, IStopItem }                  from './menu.store';
-import { extend }                                   from 'quasar';
+import { useAccountStore }                          from './account.store';
+import { accountService }                           from 'src/services/account.service';
+import { Filesystem, Directory, Encoding }          from '@capacitor/filesystem';
+import { FileOpener }                               from '@capacitor-community/file-opener';
+import axios                                        from 'axios';
+import { extend, exportFile, openURL, Notify }                                   from 'quasar';
 
 const log       = Debug('app:fahrbericht.module');
 
@@ -12,6 +17,7 @@ export interface IFahrberichtStore {
     _item:           IFahrbericht | null;
     _type:           string;
     _stops:          any[];
+    _printInProgress: boolean;
 }
 
 export const fahrberichtModule = {
@@ -19,7 +25,8 @@ export const fahrberichtModule = {
         _exists:        true,
         _item:          null,
         _type:          '',
-        _stops:         []
+        _stops:         [],
+        _printInProgress: false
     }),
     getters: {
         item:           state => state._item,
@@ -34,8 +41,12 @@ export const fahrberichtModule = {
         async updateItem ( fahrbericht: IFahrbericht ) {
             this._item = extend(true, {}, this._item, fahrbericht );
         }, 
-        removeSelectedItem () {
-            this._item = null;
+        removeSelectedItem (id?: string) {
+            if ( id && this._item && this._item._id === id)
+                this._item = null;
+
+            if (!id)
+                this._item = null;
         },
         setItem({ item, func, type }: { item: IFahrbericht, func?: string, type: string }) {
             if (func === 'resetTimestamps' && this._item) {
@@ -80,6 +91,44 @@ export const fahrberichtModule = {
         setActTrip( item: IFahrbericht ) {
             log( 'setActTrip', item );
             this.setItem({ item, type: 'dynamic' } );
+        },
+        async printEinsatzprotokoll( ) {
+            if (!this._item)
+                return;
+
+            this._printInProgress = true;
+            const params = {
+                filter: {
+                    _id: {type: 'equals', filter: this._item._id}
+                },
+                query: {dateFrom: this._item.date, dateTo: this._item.date}
+            }
+
+            const result: any = await accountService.printEinsatzprotokoll({ params })
+
+            if ( result.data ) {
+                const uint8Array = new Uint8Array(result.data);
+                const base64String = btoa(String.fromCharCode.apply(null, uint8Array));
+
+                const file = await Filesystem.writeFile({
+                    path: 'Einsatzprotokoll.pdf',
+                    data: base64String,
+                    directory: Directory.Cache
+                });
+
+                FileOpener.open({ filePath: file.uri});
+            } else 
+                Notify.create({
+                    type: 'negative',
+                    message: 'Fehler beim laden des Einsatzprotokolls',
+                    position: 'bottom',
+                    progress: true,
+                    timeout: 5000,
+                    color: 'negative',
+                    classes: 'glossy',
+                });
+
+            this._printInProgress = false;
         }
     }
 };

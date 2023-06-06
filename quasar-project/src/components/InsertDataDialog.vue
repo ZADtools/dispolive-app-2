@@ -14,7 +14,7 @@
                 <q-form ref="form">
                     <RegulationEdit :key="id" ref="regulation" v-model="editData" :disable="disable" />
                 </q-form>
-                <q-card-actions class="row q-px-xs q-py-sm bg-grey-3">
+                <q-card-actions class="row q-px-xs q-py-sm" :class="[Dark.isActive ? 'bg-grey-10' : 'bg-grey-3']">
                     <div class="col-12 q-px-sm q-mb-sm" v-if="device.operatingSystem == 'ios' && actItem?.type !== 'Serie' && actItem?.type !== 'Linie'">
                         <q-btn color="amber-7 text-white" class="full-width text-body1" padding="6px" icon="fas fa-id-card" label="EGK einlesen" @click="readEGK" />
                     </div>
@@ -27,30 +27,12 @@
                 </q-card-actions>
             </q-list>
         </q-card>
-        <q-overlay v-model="isReadingCard" z-index="5000">
-            <template v-slot:body>
-                <div class="fullscreen column justify-center items-center" >
-                    <div class="row bg-white">
-                        <div class="col-12 text-center"> 
-                            <q-spinner-facebook align="center" color="primary" size="5em"></q-spinner-facebook>
-                        </div>
-                        <div class="col-12 text-center q-pa-sm text-h6 text-primary"> 
-                            <!-- {{ readingCardMessage }} -->
-                        </div>
-                        <div class="col-12"> 
-                            <q-btn padding="6px" class="q-mt-md full-width text-body1"  color="primary" label="Abbrechen" @click="stopReadCard()"></q-btn>
-                        </div>
-                    </div>
-                </div>
-            </template>
-        </q-overlay>
     </q-dialog>
 </template>
 
 <script lang="ts" setup>
-import { defineComponent, ref, onMounted, watch }                  from 'vue';
-import Global                                               from '../helpers/Global';
-import { extend, Notify, uid }                              from 'quasar';
+import { ref, onMounted, watch, onBeforeUnmount }                  from 'vue';
+import { extend, Notify, uid, Dark }                              from 'quasar';
 import { useAccountStore }                                  from 'src/stores/account.store';
 import { useAuditStore }                                    from 'src/stores/audit.store';
 import { useFahrberichtStore }                              from 'src/stores/fahrbericht.store';
@@ -65,7 +47,7 @@ const props = defineProps({
         actItem: Object
 })
 const emits = defineEmits(['close'])
-const   data        = ref( props.actItem ),
+const   data        = ref( props.actItem || {} ),
 id          = ref(uid()),
 editData    = ref({}),
 disable     = ref(false),
@@ -105,18 +87,14 @@ const accountStore = useAccountStore();
 const { device, keyboardHeight } = storeToRefs(accountStore);
 
 const cardreaderStore = useCardreaderStore();
-//TODO
-//const { isReadingCard, cardResponse, readingCardMessage } = storeToRefs(cardreaderStore);
-//...useActions( 'cardreader', { readCard: 'readCard', stopReadCard: 'stopReadCard', setCardData: 'setCardData' } )
+const { isReadingCard, cardResponse, readingCardMessage } = storeToRefs(cardreaderStore);
 
 function closeDialog () { 
     emits( 'close', false );
 }
 async function save () {
     form.value.validate().then( async (success: boolean) => {
-        console.log('3333')
         if (success) {
-            console.log(editData.value.patName)
             const data = { ...props.actItem, ...editData.value }
             
             await auditStore.setItem({type: 'fahrbericht', value: data });
@@ -138,51 +116,32 @@ async function save () {
     })
 }
 
-        function setActItemData (val: any, field: string, ref: any) {
-            if (ref)
-                ref.hide();
+onMounted( () => {
+    cardreaderStore.init()
+    editData.value = extend( true, {}, item.value);
 
-            switch (field) {
-                case 'krankenkasse': {
-                    const obj = { 
-                        krankenkasse:   val.name,
-                        kkId:           val._id,
-                        versNr:         val.ikKtNr
-                    }
+    if (props.actItem?.type === 'Serie')
+        disable.value = true;
+} )
 
-                    item.value      = { ...item.value, ...obj };
-                    data.value      = { ...data.value, ...obj };
-                    editData.value  = { ...data.value, ...obj };
-                
-                    break;
-                }
-                default: 
-                    item.value      = {...item.value, ...{ [field]: val } };
-                    data.value      = {...data.value, ...{ [field]: val } };
-                    editData.value  = {...data.value, ...{ [field]: val } };
-                    break;
-            }
-        }
+onBeforeUnmount( () => {
+    console.log('unmount')
+    cardreaderStore.stopReadCard()
+    cardreaderStore.remove()
+} )
 
-        onMounted( () => {
-            editData.value = extend( true, {}, item.value);
+async function readEGK () {
+    cardreaderStore.readCard();
+}
 
-            if (props.actItem?.type === 'Serie')
-                disable.value = true;
-        } )
+async function stopReadCard() {
+    cardreaderStore.stopReadCard()
+}
 
-        async function readEGK () {
-            cardreaderStore.readCard();
-        }
-
-        async function stopReadCard() {
-            cardreaderStore.stopReadCard();
-        }
-
-        watch( cardreaderStore._cardResponse, async ( newVal ) => {
-            if ( Object.keys(newVal).length > 0 ) {
-                editData.value = { ...await cardreaderStore.setCardData( editData.value ) }
-                id.value = uid();
-            }
-        } )
+watch( cardResponse, async ( newVal ) => {
+    if ( Object.keys(newVal).length > 0 ) {
+        editData.value = await cardreaderStore.setCardData( editData.value )
+        id.value = uid();
+    }
+} )
 </script>

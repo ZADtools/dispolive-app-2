@@ -24,9 +24,9 @@ export const useKostentraegerStore = defineStore('kostentraegerStore', {
             log( 'getData' );
             
             try {
-                // const kostentraeger   = await accountService.getDataSocket( { event: 'getDefaultCol', param: { col: 'krankenkassen' } } );
-                // if ( Array.isArray(kostentraeger?.data) )
-                //     this._data = kostentraeger.data
+                const kostentraeger   = await accountService.getDataSocket( { event: 'getDefaultCol', param: { col: 'krankenkassen' } } );
+                if ( Array.isArray(kostentraeger?.data) )
+                    this._data = kostentraeger.data
             } catch (error) {
                 log( 'Error getData', error );
                 this._data = [];

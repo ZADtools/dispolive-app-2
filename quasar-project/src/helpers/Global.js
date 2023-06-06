@@ -148,11 +148,15 @@ export default function Global() {
             console.log('tripAbort no ID')
             return
         }
-        removeStore(id)
-        setSelectedNavPoint();
-        navStore.removeNavPoint( {_id: id} );
-        router.push( '/app/fahrberichte' )
-        fahrberichtStore.removeSelectedItem();
+        try {
+            removeStore(id)
+            setSelectedNavPoint();
+            navStore.removeNavPoint({_id: id});
+            fahrberichtStore.removeSelectedItem();
+            router.push( '/app/fahrberichte' )
+        } catch (error) { 
+            console.log('tripAbort', error)
+        }
     }
 
     function isDateValid(val) {
@@ -192,6 +196,7 @@ export default function Global() {
         isDateValid,
         compareObjects,
         groupBy,
-        toPairs
+        toPairs,
+        removeStore
     }
 }

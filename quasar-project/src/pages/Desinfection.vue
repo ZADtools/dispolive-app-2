@@ -7,8 +7,8 @@
             no-wrap
             @click="clickArt()"
             toggle-color="primary"
-            color="grey-4"
-            text-color="primary"
+            :color="Dark.isActive ? 'grey-10' : 'grey-4'"
+            :text-color="Dark.isActive ? 'white' : 'primary'"
             :options="desiArt"
         >
             <template v-slot:regeldesinfektion>
@@ -84,7 +84,7 @@
                 </div>
 
                 <div v-for="item of items" :key="item._id">
-                    <div class="row bg-grey-2 groupHeader">
+                    <div class="row groupHeader" :class="[Dark.isActive ? 'bg-grey-10' : 'bg-grey-2']">
                         <div class="col-2">
                             <q-toggle
                                 v-model="form.protokoll[item._id]"
@@ -144,7 +144,7 @@
                     </q-input>
                 </div>
             </div>
-        <div class="row q-px-lg q-py-sm bg-grey-3" >
+        <div class="row q-px-lg q-py-sm" :class="[Dark.isActive ? 'bg-grey-10' : 'bg-grey-3']" >
             <div class="col-6 q-px-sm">
                 <q-btn class="full-width text-body1" padding="6px" color="negative" @click="confirmAbort()" label="Abbrechen" />
             </div>
@@ -158,7 +158,7 @@
             persistent
             transition-show="jump-right"
             transition-hide="jump-right">
-            <q-card class="bg-white" style="width: 700px;">
+            <q-card style="width: 700px;">
                 <q-bar class="q-pa-lg text-h6 text-white bg-primary">
                     Daten ändern
                 </q-bar>
@@ -175,7 +175,7 @@
                     
                 </div>
                 <q-separator />
-                <q-card-actions class="row q-px-lg q-py-sm bg-grey-3">
+                <q-card-actions class="row q-px-lg q-py-sm" :class="[Dark.isActive ? 'bg-grey-10' : 'bg-grey-3']">
                     <div class="col-6 q-px-sm">
                         <q-btn class="full-width" padding="6px" color="negative" v-close-popup label="Abbrechen" />
                     </div>
@@ -190,7 +190,7 @@
             persistent
             transition-show="jump-right"
             transition-hide="jump-right">
-            <q-card class="bg-white" style="width: 700px;">
+            <q-card style="width: 700px;">
                 <q-bar class="q-pa-lg text-h6 text-white bg-primary">
                     Speichern
                 </q-bar>
@@ -202,7 +202,7 @@
                     
                 </div>
                 <q-separator />
-                <q-card-actions class="row q-px-lg q-py-sm bg-grey-3">
+                <q-card-actions class="row q-px-lg q-py-sm" :class="[Dark.isActive ? 'bg-grey-10' : 'bg-grey-3']">
                     <div class="col-6 q-px-sm">
                         <q-btn class="full-width text-body1" padding="6px" color="negative" v-close-popup label="Abbrechen" />
                     </div>
@@ -218,7 +218,7 @@
             persistent
             transition-show="jump-right"
             transition-hide="jump-right">
-            <q-card class="bg-white" style="width: 700px;">
+            <q-card style="width: 700px;">
                 <q-bar class="q-pa-lg text-h6 text-white bg-negative">
                     Achtung
                 </q-bar>
@@ -230,7 +230,7 @@
                     
                 </div>
                 <q-separator />
-                <q-card-actions class="row q-px-lg q-py-sm bg-grey-3">
+                <q-card-actions class="row q-px-lg q-py-sm" :class="[Dark.isActive ? 'bg-grey-10' : 'bg-grey-3']">
                     <div class="col-12 q-px-sm">
                         <q-btn align="center" class="full-width text-body1" padding="6px" color="primary" v-close-popup label="Ok" />
                     </div>
@@ -242,7 +242,7 @@
             persistent
             transition-show="jump-right"
             transition-hide="jump-right">
-            <q-card class="bg-white" style="width: 700px;">
+            <q-card style="width: 700px;">
                 <q-bar class="q-pa-lg text-h6 text-white bg-negative">
                     Achtung
                 </q-bar>
@@ -254,7 +254,7 @@
                     
                 </div>
                 <q-separator />
-                <q-card-actions class="row q-px-lg q-py-sm bg-grey-3">
+                <q-card-actions class="row q-px-lg q-py-sm" :class="[Dark.isActive ? 'bg-grey-10' : 'bg-grey-3']">
                    
                     <div class="col-6 q-px-sm">
                         <q-btn class="full-width text-body1" padding="6px" color="negative" @click="abort()" label="Ja" />
@@ -272,7 +272,7 @@
 <script lang="ts" setup>
 import { ref, watch, computed, onActivated }                            from 'vue';
 import { useRouter }                                                    from 'vue-router';
-import { uid, extend }                                                  from 'quasar';
+import { uid, extend, Dark }                                            from 'quasar';
 import Global                                                           from '../helpers/Global';
 import { useDesiprotokolleStore }                                       from 'src/stores/desiprotokolle.store';
 import { storeToRefs }                                                  from 'pinia';
@@ -519,8 +519,6 @@ async function saveData () {
             await auditStore.setItem({type: 'desinfektion', value: data});
             
             const navPoint = { ...fb.item, desiProt: true  }
-            //TODO
-            //accountStore.globalDispatcher(navPoint)
             fahrberichtStore.updateItem(navPoint)
 
             log('formdata', data)  

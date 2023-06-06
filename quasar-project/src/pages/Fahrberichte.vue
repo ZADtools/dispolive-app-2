@@ -51,15 +51,15 @@
         </q-list>
         <q-dialog
             :model-value="previewFb"
-            @update:model-value="(val) => fahrberichteStore.setPreviewFb(val)"
+            @update:model-value="(val) => { fahrberichteStore.setPreviewFb(val); accountStore.setTitle('Fahrten'); }"
             persistent
             :maximized="true"
             transition-show="jump-right"
             transition-hide="jump-right">
-            <q-card class="bg-white" :class="[device.platform == 'android' ? 'saveAreaAndroid' : '']">
-                <q-card-actions class="row q-px-sm q-pt-sm bg-grey-3">
+            <q-card :class="[device.platform == 'android' ? 'saveAreaAndroid' : '']">
+                <q-card-actions class="row q-px-sm q-pt-sm" :class="[Dark.isActive ? 'bg-grey-10' : 'bg-grey-3']">
                     <div class="q-pr-sm" :class="{'col-6': fbItem && fbItem.date === dayjs().format('YYYY-MM-DD'), 'col-12': fbItem && fbItem.date !== dayjs().format('YYYY-MM-DD')}">
-                        <q-btn class="full-width text-body1" padding="6px" v-close-popup color="negative" >
+                        <q-btn class="full-width text-body1" padding="6px" @click="closePreview()" color="negative" >
                             <div class="ellipsis">
                                 Zurück
                             </div>
@@ -85,7 +85,7 @@
                 </q-list>
             </q-card>
         </q-dialog>
-        <InsertDataDialog :key="insertDataDialog" :insertDataDialog="insertDataDialog" :actItem="fbItem" @close="showInsertData" />
+        <InsertDataDialog v-if="insertDataDialog" :insertDataDialog="insertDataDialog" :actItem="fbItem" @close="showInsertData" />
         <Dialog 
             v-if="askDialog"
             text="Diese Fahrt wurde schon begonnen. Möchten Sie die Fahrt fortsetzen oder neu beginnen?" 
@@ -105,7 +105,7 @@ import { onBeforeMount, onBeforeUnmount, ref }                      from 'vue';
 import { useRouter }                                                from 'vue-router';
 import Dialog                                                       from '../components/Dialog.vue';
 import FahrberichtView                                              from 'src/components/FahrberichtView.vue';
-//import InsertDataDialog                                             from 'src/components/InsertDataDialog.vue';
+import InsertDataDialog                                             from 'src/components/InsertDataDialog.vue';
 import { useAccountStore }                                          from 'src/stores/account.store';
 import * as FahrberichtModule                                       from 'src/stores/fahrbericht.store';
 import { useFahrberichtStore }                                      from 'src/stores/fahrbericht.store';
@@ -115,7 +115,7 @@ import { useAuditStore }                                            from 'src/st
 import { useNavStore }                                              from 'src/stores/nav.store';
 import { useSerienKategorienStore }                                 from 'src/stores/serienkategorien.store';
 import { useSettingsStore }                                         from 'src/stores/settings.store';
-import { extend }                                                   from 'quasar';
+import { extend, Dark }                                             from 'quasar';
 import dayjs                                                        from 'dayjs';
 import { storeToRefs, defineStore }                                 from 'pinia';
 import debug                                                        from 'debug';
@@ -220,7 +220,6 @@ async function tripAccept (removeTimestamps?: boolean) {
         dynamedStore.setAcceptItem(fbItem.value);
         accountStore.setTitle(fbItem.value.titel || '')
         router.push(`/app/fahrberichtactiv/${fbItem.value._id}`)
-        //TODO
         setTimeout( async () => {
             await menuStore.setStatus({fbId: fbItem.value?._id})
         } )
@@ -271,6 +270,10 @@ function setTimeText( item: IFahrbericht ) {
     return displayTime;
 }
 
+function closePreview () {
+    fahrberichteStore.setPreviewFb( false );
+    accountStore.setSecondHeader('Fahrberichte');
+}
 </script>
 
 <style scoped lang="scss">

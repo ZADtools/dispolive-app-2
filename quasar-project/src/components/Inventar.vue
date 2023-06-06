@@ -81,7 +81,7 @@
             persistent
             transition-show="jump-right"
             transition-hide="jump-right">
-            <q-card class="bg-white" style="width: 700px;">
+            <q-card style="width: 700px;">
                 <q-bar class="q-pa-lg text-h6 text-white bg-negative">
                     Achtung
                 </q-bar>
@@ -97,9 +97,8 @@
                          {{item}}
                     </div>
                 </div>
-               
                 <q-separator />
-                <q-card-actions class="row q-px-lg q-py-sm bg-grey-3">
+                <q-card-actions class="row q-px-lg q-py-sm" :class="[Dark.isActive ? 'bg-grey-10' : 'bg-grey-3']">
                     <div class="col-12 q-px-sm">
                         <q-btn  align="center" class="full-width text-body1" padding="6px" color="primary" v-close-popup label="Ok" />
                     </div>

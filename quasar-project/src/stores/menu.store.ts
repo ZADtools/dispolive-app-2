@@ -106,10 +106,6 @@ export const useMenuStore = defineStore('menuStore', {
             log('setAdressChange', status)
             this._adressChange = status;
         },
-        callDisposition( ) {
-            //TODO
-            //dispatch('setSelectedText', 'Rückruf angefordert', {root: true})
-        },
         async setProgress( fb: IFahrbericht ) {
             let progress = 0
             let status = { key: 'startBegin', text: 'Anfahrt' }

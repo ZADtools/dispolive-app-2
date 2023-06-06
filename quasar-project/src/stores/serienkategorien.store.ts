@@ -1,5 +1,6 @@
 import { defineStore }                 from 'pinia';
-import Debug                                        from 'debug';  
+import Debug                           from 'debug';  
+import { accountService }               from 'src/services/account.service';
 
 const log       = Debug('app:serienkategorien.module');
 
@@ -23,9 +24,8 @@ export const useSerienKategorienStore = defineStore('serienkategorienStore', {
             log( 'getData' );
             
             try {
-                //TODO
-                // const data: any     = await accountService.getDataSocket( { rootGetters, event: 'getDefaultCol', param: { col: 'serienKategorien' } } );
-                // commit( 'setData', data.data );
+                const data: any     = await accountService.getDataSocket( { event: 'getDefaultCol', param: { col: 'serienKategorien' } } );
+                this._data          = data.data || [];
             } catch (error) {
                 log( 'Error getData', error );
                 this._data = [];

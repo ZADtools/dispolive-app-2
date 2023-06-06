@@ -361,12 +361,6 @@ export const useAccountStore = defineStore('accountStore', {
                 this._keyboardHeight = 0;
             });
         },
-        setAlwaysGeolocation( ) {
-            //TODO
-            // BackgroundGeolocation.setConfig({
-            //     locationAuthorizationRequest: 'Always'
-            // });
-        },
         async startGeoPosWatch( ) {
             log('startGeoPosWatch')
             const sendCoords = this.sendCoords
@@ -381,9 +375,9 @@ export const useAccountStore = defineStore('accountStore', {
                     if (error) {
                         if (error.code === 'NOT_AUTHORIZED') {
                             if (window.confirm(
-                                'This app needs your location, ' +
-                                'but does not have permission.\n\n' +
-                                'Open settings now?'
+                                'Geolocation ist ausgeschaltet.\n\n' +
+                                'Bitte gehen Sie in die Einstellungen und schalten Sie\n\n' +
+                                '"Standort -> Immer" an.'
                             )) {
                                 BackgroundGeolocation.openSettings();
                             }
@@ -548,13 +542,8 @@ export const useAccountStore = defineStore('accountStore', {
             const navStore = useNavStore();
             const { data } = storeToRefs(navStore);
             const   trips = data.value
+            this._logoutDialog = false
 
-            // TODO
-            // trips.forEach( (trip: any) => {
-            //     dispatch( `${trip.item._id}/removeAcceptItem`, trip.item, { root: true } );
-            //     store.value.unregisterModule( trip.item._id );
-            //     // dispatch( 'setSelectedNavPoint', navigation[0]);
-            // });
             Network.removeAllListeners();
             
             const inventarStore = useInventarStore();

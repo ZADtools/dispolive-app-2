@@ -1,6 +1,6 @@
 <template>
     <div>
-        <q-item clickable @click="item.submenu !== 'forTrips' ? clicked(item) : ''" :class="[ selectedMenuPoint(item), 'overflow-hidden', 'text-no-wrap', 'menu-item', 'bg-grey-1']">
+        <q-item clickable @click="item.submenu !== 'forTrips' ? clicked(item) : ''" :class="[ selectedMenuPoint(item), 'overflow-hidden', 'text-no-wrap', Dark.isActive ? 'menu-itemDark' : 'bg-grey-1, menu-item']">
             <q-item-section avatar :class="['menu-item-section', item.menuType == 'sub' ? 'subMenu': '', item.submenu == 'forTrips' && navItems.length > 0 ? 'bg-primary' : iconColor, textColor]" >
                 <q-icon :name="getStatus.status === 'pause' && item.title === 'Pausieren' ? item.activeIcon : item.icon" />
             </q-item-section>
@@ -31,7 +31,7 @@
             persistent
             transition-show="jump-right"
             transition-hide="jump-right">
-            <q-card class="bg-white" style="width: 700px;">
+            <q-card style="width: 700px;">
                 <q-bar class="q-pa-lg text-h6 text-white bg-primary">
                     Sonderrechte
                 </q-bar>
@@ -70,6 +70,7 @@ import { useAuditStore }                                    from 'src/stores/aud
 import { useDesiprotokolleStore }                           from 'src/stores/desiprotokolle.store';
 import { useRouter }                                        from 'vue-router';
 import { storeToRefs, defineStore }                         from 'pinia';
+import { Dark }                                             from 'quasar';
 
 const log                                                   = debug('app:MenuLink');
 
@@ -172,6 +173,9 @@ function selectedMenuPoint ( item: any ) {
     if ( item.item && selectedNavPoint.value?.item )
         exists =  selectedNavPoint.value.item._id === item.item._id
 
+    if ( Dark.isActive )
+        return exists ? 'selectedDark' : 'notSelected';
+
     return exists ? 'selected' : 'notSelected';
 }
 
@@ -251,9 +255,13 @@ function setLabelTextColor(item: any) {
 </script>
 
 <style lang="scss">
-
         .menu-item {
             border-bottom: 1px solid $secondary;
+            padding: 0px 5px 0 0px
+        }
+
+        .menu-itemDark {
+            border-bottom: 1px solid $grey-9;
             padding: 0px 5px 0 0px
         }
 
@@ -286,5 +294,9 @@ function setLabelTextColor(item: any) {
 
         .selected {
             background-color: $grey-4 !important
+        }
+
+        .selectedDark {
+            background-color: $grey-10 !important
         }
 </style>

@@ -1,5 +1,5 @@
 <template>
-    <div class="bg-grey-3" v-if="secondHeader" style="height: 63px">
+    <div :class="[Dark.isActive ? 'bg-dark' : 'bg-grey-3']" v-if="secondHeader" style="height: 63px">
         <!-- desinfektionsheader -->
         <div class="row" v-show="secondHeader === 'Desinfektion'">
             <div class="col-12">
@@ -48,14 +48,14 @@
         <!-- messagessecondheader -->
         <div class="row q-pa-sm" style="min-height: 65px" v-show="secondHeader=='messages'">
             <div class="col-6 q-pr-xs">
-                <q-btn class="full-width ellipsis text-body1" padding="6px" color="negative" @click="messengerStore.setSelectedText('Besatzung bittet um Rückruf!')" >
+                <q-btn class="full-width ellipsis text-body1" padding="6px" color="negative" @click="messengerStore.setSelectedText({ type: 'messenger', text: 'Besatzung bittet um Rückruf!' })" >
                     <div class="ellipsis">
                         Rückruf anfordern
                     </div>
                 </q-btn>
             </div>
             <div class="col-6 q-pl-xs">
-                <q-btn class="full-width ellipsis text-body1" padding="6px" color="primary" @click="showTextSnippets = true" >
+                <q-btn class="full-width ellipsis text-body1" padding="6px" color="primary" @click="messengerStore._showTextSnippets = true" >
                 <div class="ellipsis">
                         Textbausteine
                     </div>
@@ -94,7 +94,7 @@
         <!-- kontaktsecondheader -->
         <q-toolbar v-show="secondHeader == 'contacts'">
             <div class="col-12 q-py-sm">
-                <q-input filled :modelValue="search" @update:model-value="($event) => searchContacts($event)" clearable label-color="primary" label="Suche" class="bg-grey-1" >
+                <q-input filled :modelValue="search" @update:model-value="($event) => searchContacts($event)" clearable label-color="primary" label="Suche" :class="[Dark.isActive ? 'bg-grey-10' : 'bg-grey-3']" >
                     <template v-slot:prepend>
                         <q-icon color="primary" name="place" />
                     </template>
@@ -102,47 +102,26 @@
             </div>
         </q-toolbar>
         <!-- cardreadersubheader -->
-        <q-toolbar class="bg-white row q-pa-sm" v-show="secondHeader == 'cardreader'">
-            <div class="col-6 q-pr-xs">
-                <q-btn class="full-width ellipsis text-body1" padding="6px" color="primary" @click="cardReaderStore.startPairing">
+        <q-toolbar v-show="secondHeader === 'cardreader'">
+            <div class="col-12" v-if="isScanning">
+                <q-btn color="negative" class="text-body1" padding="6px" @click="cardreaderStore.stopBarcodeScanning()" label="Abbrechen" />
+            </div>
+            <div class="col-6 q-pr-xs" v-if="!isScanning">
+                <q-btn class="full-width ellipsis text-body1" padding="6px" color="primary" @click="cardreaderStore.startPairing">
                     <div class="ellipsis">
                         Gerät Koppeln
                     </div>
                 </q-btn>
             </div>
-            <div class="col-6 q-pl-xs">
-                <q-btn class="full-width ellipsis text-body1" padding="6px"  color="primary" @click="cardReaderStore.readCard">
+            <div class="col-6 q-pl-xs" v-if="!isScanning">
+                <q-btn class="full-width ellipsis text-body1" padding="6px"  color="primary" @click="cardreaderStore.readCard">
                     <div class="ellipsis">
                         EGK lesen
                     </div>
                 </q-btn>
             </div>
         </q-toolbar>
-        <q-dialog
-            :modelValue="showTextSnippets"
-            @update:modelValue="showTextSnippets = false"
-            persistent
-            full-height
-            transition-show="jump-right"
-            transition-hide="jump-right">
-            <q-card class="bg-white" style="width: 700px;">
-                <q-bar class="q-pa-lg text-h6 text-white bg-primary">
-                    Textbausteine
-                </q-bar>
-                <div class="row q-mx-sm bg-white" >
-                    <q-list seperator style="width: 100vw" class="bg-white default-fullheight-modal">
-                        <div class="col-12" v-for="(item, index) of textBausteine">
-                            <q-btn :key="index" color="secondary" no-caps class="full-width q-my-sm q-px-xs ellipsis text-body1" padding="6px" :label="item.text" align="left" @click="clickTextbaustein(item.text)" />
-                        </div>
-                    </q-list>
-                </div>
-                <div class="row">
-                    <div class="col-12 q-pa-sm">
-                        <q-btn class="full-width text-body1" padding="6px" color="negative" v-close-popup label="Schliessen" />
-                    </div>
-                </div>
-            </q-card>
-        </q-dialog>
+        
         <Dialog 
             text="Soll der ausgewählte Tag wirklich geladen werden? Ihre mobile Datenmenge wird durch diese Funktion stark verbraucht!" 
             abortLabel="Nein" 
@@ -151,11 +130,13 @@
             :modelValue="changeDayDialog"  
             @update:modelValue="(val) => changeDayDialog = val"  
         />
+
+        <TextSnippets type="messenger"/>
     </div>
 </template>
 
 <script lang="ts" setup>
-import { ref, onBeforeMount, onActivated }                      from 'vue'
+import { ref, onBeforeMount }                      from 'vue'
 import { useAccountStore }          from 'src/stores/account.store';
 import { useDesiprotokolleStore }   from 'src/stores/desiprotokolle.store';
 import { useFahrberichteStore }     from 'src/stores/fahrberichte.store';
@@ -165,6 +146,8 @@ import { useCardreaderStore }       from 'src/stores/cardreader.store';
 import { usePatientenStore }        from 'src/stores/patienten.store';
 import { useAuditStore }            from 'src/stores/audit.store';
 import Dialog                       from 'src/components/Dialog.vue';
+import TextSnippets                 from 'src/components/TextSnippets.vue';
+import { Dark }                     from 'quasar';
 
 import { storeToRefs }              from 'pinia';
 import dayjs                   from 'dayjs';
@@ -175,24 +158,24 @@ const { title, secondHeader, beifahrer, fahrer, progressBarLoad } = storeToRefs(
 const fahrberichteStore = useFahrberichteStore()
 const { actDay } = storeToRefs(fahrberichteStore)
 
+const cardreaderStore = useCardreaderStore()
+const { isScanning } = storeToRefs(cardreaderStore)
+
 const patientenStore = usePatientenStore()
 
 const desiprotokolleStore = useDesiprotokolleStore()
 const { diffTime } = storeToRefs(desiprotokolleStore)
 
 const messengerStore = useMessengerStore()
-const { data: textBausteine } = storeToRefs(messengerStore)
 
 const dienstplanStore = useDienstplanStore();
 const { pers } = storeToRefs(dienstplanStore);
 
-const cardReaderStore = useCardreaderStore();
 const auditStore = useAuditStore();
 
 const btnColorToday           = ref('negative')
 const btnColorNext            = ref('primary')
 const search                  = ref('')
-const showTextSnippets        = ref(false)
 const disableDienst           = ref(false)
 const changeDayDialog         = ref(false)
 const day                     = dayjs().format('YYYY-MM-DD')
@@ -229,11 +212,6 @@ function setNextDayLabel ( type: string ) {
 function changeDay ( item: string ) {
     changeDayDialog.value = true;
     fahrberichteStore._selectedDay = item;
-}   
-
-function clickTextbaustein ( text: string ) {
-    messengerStore.setSelectedText(text)
-    showTextSnippets.value = false;
 }
 
 function getKrz(pers: any) {

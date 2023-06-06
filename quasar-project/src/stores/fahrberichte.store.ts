@@ -12,7 +12,9 @@ import { useAccountStore }              from './account.store';
 import { useSocketStore }               from './socket.store';
 import { LocalNotifications }           from '@capacitor/local-notifications';
 import * as jsondiffpatch               from 'jsondiffpatch';
+import Global                           from 'src/helpers/Global';
 
+const global = Global()
 const log       = Debug('app:fahrberichte.module');
 
 export interface IFahrberichteState {
@@ -123,8 +125,6 @@ export const useFahrberichteStore = defineStore('fahrberichteStore', {
                 this._data.splice( index, 1 );
         },
         async getChangesFb( ) {
-            //TODO
-            //const global = Global();
             const fahrzeugeStore    = useFahrzeugeStore();
             const fahrberichtStore  = useFahrberichtStore();
             const navStore          = useNavStore();
@@ -148,23 +148,23 @@ export const useFahrberichteStore = defineStore('fahrberichteStore', {
 
             if ( data && data.length > 0 ) {
                 data.forEach(( elm: any ) => {
-                    //TODO
-                    const fbOpen = null;
-                    // const fbOpen = _.find( rootGetters['nav/item'], (item) => {
-                    //     return item.item._id == elm.fbId;
-                    // } )
-
                     if ( elm.delete ) {
-                        //TODO
-                        // if (fbOpen) {
-                        //     global.tripAbort(fbOpen.item._id, fbOpen.item);
-                        //     commit( 'setLastDeletedItem', fbOpen )
-                        // }
+                        try {
+                            this.setPreviewFb(false)
+                            this.deleteItem( elm.fbId )
+                            global.removeStore(elm.fbId)
+                            global.setSelectedNavPoint();
+                            navStore.removeNavPoint({_id: elm.fbId});
+                            
+                            console.log(fahrberichtStore._item, elm.fbId)
+                            if ( fahrberichtStore._item?._id === elm.fbId )
+                                this.router.push({path: '/app/fahrberichte'})
 
-                        //remove item from trips array
-                        //dispatch('setPreviewFb', false)
-                        this.deleteItem( elm.fbId )
-                        navStore.removeNavPoint( { _id: elm.fbId } )
+                            fahrberichtStore.removeSelectedItem(elm.fbId);
+                        } catch (error) {
+                            console.log('error', error)
+                        }
+
                         audioStore.play( 'entzogenFahrt' );
 
                         if ( !accountStore._appInForeground && accountStore._device.platform === 'ios' )
@@ -181,10 +181,10 @@ export const useFahrberichteStore = defineStore('fahrberichteStore', {
                         const exists = this._data.find(( item ) => {
                             return item._id === elm.fbId
                         });
-                        log('exists', exists, elm.item)
+                        console.log('exists', exists, elm.item)
 
                         //check if item empty
-                        const notEmpty = Object.keys(elm.item).length > 0;
+                        const notEmpty = Object.keys(elm.item || {}).length > 0;
 
                         if ( notEmpty ) {
                             let  item;
@@ -193,7 +193,7 @@ export const useFahrberichteStore = defineStore('fahrberichteStore', {
                                 item = jsondiffpatch.patch( {...exists}, elm.item);
                                 item.sendStatusRead = '';
                                 if (
-                                    fbOpen &&
+                                    fahrberichtStore._item?._id &&
                                     ( 
                                         exists.startStreet !== item.startStreet ||
                                         exists.startZip !== item.startZip ||
@@ -226,7 +226,7 @@ export const useFahrberichteStore = defineStore('fahrberichteStore', {
                                 auditStore.setItem( { type: 'sendungsstatus', value: sendungsData, fb: item } );
                                 this.updateItem( item )
 
-                                if (!fbOpen)
+                                if (!fahrberichtStore._item?._id)
                                     fahrberichtStore.setShowItem( item )
                                 
                                 accountStore.globalDispatcher( item )

@@ -2,7 +2,7 @@
     <div>
         <div v-if="inApp" style="margin-bottom: 50px;">
             <inventar :carItems="carItems" :form="form" />  
-            <q-page-sticky expand position="bottom" class="q-pl-sm q-pt-sm bg-white row" >
+            <q-page-sticky expand position="bottom" class="q-pl-sm q-pt-sm row" :class="[Dark.isActive ? 'bg-grey-10' : 'bg-grey-3']" >
                 <div class="col-6 q-px-sm">
                     <q-btn class="full-width text-body1" padding="6px" color="negative"  @click="confirmAbort()" label="Abbrechen" />
                 </div>
@@ -61,7 +61,7 @@ import Inventar                                                 from 'src/compon
 import CustLayout                                               from 'src/components/Layout.vue';
 import debug                                                    from 'debug';
 import dayjs                                                    from 'dayjs';
-import { uid }                                                  from 'quasar';
+import { uid, Dark }                                            from 'quasar';
 import { useAccountStore }                                      from 'src/stores/account.store';
 import { useAuditStore }                                        from 'src/stores/audit.store';
 import { useFahrzeugeStore }                                    from 'src/stores/fahrzeuge.store';
@@ -110,7 +110,8 @@ function confirmAbort() {
         abort();
 }
 
-function abort() {
+async function abort() {
+    accountStore.loading(true)
     const data = {
         _id:        uid(),
         fahrer:     fahrer.value?.persId || '',
@@ -123,11 +124,13 @@ function abort() {
     auditStore.setItem({type: 'bestueckungslisteDecline', value: data});
 
     form.value.items = {};
-    router.push( '/app/fahrberichte' );
+    await router.push( '/app/fahrberichte' );
     confirmAbortDialog.value = false;
+    accountStore.loading(false)
 }
 
-function saveCarItemList() {
+async function saveCarItemList() {
+    accountStore.loading(true)
     const data: any = {
         _id:        uid(),
         fahrer:     fahrer.value?.persId || '',
@@ -156,13 +159,15 @@ function saveCarItemList() {
 
     if (data.items.length !== countItems.value) {
         errorDataDialog.value = true
+        accountStore.loading(false)
         return
     }
 
     auditStore.setItem({type: 'bestueckungsliste', value: data})
     saveDataDialog.value = false;
     form.value.items = {};
-    router.push( '/app/fahrberichte' )
+    await router.push( '/app/fahrberichte' )
+    accountStore.loading(false)
 }
 </script>
 

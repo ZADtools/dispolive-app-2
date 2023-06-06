@@ -26,7 +26,8 @@ export const accountService = {
     getCustomData,
     transferItem,
     transferFile,
-    getDataSocket
+    getDataSocket,
+    printEinsatzprotokoll
 };
 
 async function setDomain( dom: string ) {
@@ -67,6 +68,22 @@ async function login( data: any ) {
 
         return err;
     }
+}
+
+function printEinsatzprotokoll( { params }: any ) {
+    return new Promise((resolve, reject) => {
+        const socketStore = useSocketStore()
+        const { io } = storeToRefs(socketStore)
+
+        const accountStore = useAccountStore();
+        const { sessionId: sessionID } = storeToRefs(accountStore);
+
+        io.value.emit('printEinsatzprotokoll', { sessionID: sessionID.value, params }, (err: any) => {
+            if (!err || !err.error ) {
+                resolve(err)
+            }
+        });
+    })
 }
 
 function logout( { sessionID }: any ) {

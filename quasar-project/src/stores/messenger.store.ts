@@ -6,6 +6,7 @@ import { useFahrzeugeStore }                        from './fahrzeuge.store';
 import { LocalNotifications }                       from '@capacitor/local-notifications';
 import { accountService }                           from 'src/services/account.service';
 import { useAuditStore }                            from './audit.store';
+import { useAudioStore }                            from './audio.store';
 
 const log       = Debug('app:messenger.module');
 
@@ -20,7 +21,10 @@ export interface IMessage {
     name:            string;
     user:            IUser | null;
 }
-
+export interface ITextbaustein {
+    text:            string;
+    type:           string
+}
 export interface IMessengerState {
     _data:           IMessage[]
     _messages:       IMessage[];
@@ -28,8 +32,9 @@ export interface IMessengerState {
     _index:          number,
     _scrollEnd:      boolean,
     _lastItem:       string,
-    _selectedText:   string,
-    _unread:         number   
+    _selectedText:   ITextbaustein | null,
+    _unread:         number,
+    _showTextSnippets: boolean
 }
 
 export const useMessengerStore = defineStore('messengerStore', {
@@ -40,8 +45,9 @@ export const useMessengerStore = defineStore('messengerStore', {
         _index:          0,
         _scrollEnd:      false,
         _lastItem:       '',
-        _selectedText:   '',
-        _unread:         0
+        _selectedText:   null,
+        _unread:         0,
+        _showTextSnippets: false
     }),
     getters: {
         data:           state => state._data,
@@ -73,8 +79,8 @@ export const useMessengerStore = defineStore('messengerStore', {
             const accountStore = useAccountStore();
             accountStore._progressBarLoad = bool
         },
-        setSelectedText( text: string ) {
-            this._selectedText = text
+        setSelectedText( item: { type: string, text: string } ) {
+            this._selectedText = item
         },
         setUnread( count: number ) {
             this._unread = count
@@ -135,7 +141,7 @@ export const useMessengerStore = defineStore('messengerStore', {
             this._scrollEnd = item
         },
         async getMessages( { index }: { index: number } ) {
-            log( 'getMessages', index);
+            console.log( 'getMessages', index);
             const fahrzeugeStore = useFahrzeugeStore();
             const { item } = storeToRefs(fahrzeugeStore);
     
@@ -174,6 +180,8 @@ export const useMessengerStore = defineStore('messengerStore', {
             const accountStore = useAccountStore();
             const { secondHeader, device, appInForeground } = storeToRefs(accountStore);
 
+            const audioStore = useAudioStore();
+
             if (!data)
                 try {
                     if ( item.value?._id ) {
@@ -206,9 +214,8 @@ export const useMessengerStore = defineStore('messengerStore', {
                                     ]
                                 });
                         } )
-                        //TODO 
-                        // if ( messages && messages.data && messages.data.length > 0 )
-                        //     dispatch( 'audio/play', 'neueNachricht', { root: true } );
+                        if ( messages && messages.data && messages.data.length > 0 )
+                            audioStore.play( 'neueNachricht' );
                         
                         if (secondHeader.value !== 'messages' && messages.data)
                         this.setUnread( this._unread + messages.data.length )
@@ -240,8 +247,7 @@ export const useMessengerStore = defineStore('messengerStore', {
                     });
                 this.setReceive({data: [data]})
             }
-            //TODO
-            //dispatch( 'audio/play', 'neueNachricht', { root: true } );
+            audioStore.play( 'neueNachricht' );
         }
     },
 });

@@ -238,6 +238,11 @@ export const useAuditStore = defineStore('auditStore', {
                     item.value.time                             = dayjs().format('HH:mm');
                     item.value.fbId                             = item.value._id;
                 }
+
+                if ( item.type === 'fahrbericht' )
+                    if (item.value.frei)
+                        item.value.gefahren = 1;
+
                 //******HOOOK Ende
                 const data: any = extend(true, {}, item);
 
@@ -280,9 +285,6 @@ export const useAuditStore = defineStore('auditStore', {
 
                 //berechne den fortschritt der fahrt neu
                 if (item.type === 'fahrbericht') {
-                    if (item.value.frei)
-                        item.value.gefahren = 1;
-
                     const data = {...item.fb, ...item.value};
                         
                     await accountStore.globalDispatcher(data)
@@ -310,7 +312,6 @@ export const useAuditStore = defineStore('auditStore', {
                 if (item.type === 'pauseStatus') {
                     log('pauseStatus', item.value)
                     const data = {...item.fb, ...{[item.value.status]: true}};
-                    //TODO prüfen ob das richtog ist
                     await accountStore.globalDispatcher(data)
                 }
         

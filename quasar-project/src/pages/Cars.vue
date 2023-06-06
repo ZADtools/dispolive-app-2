@@ -144,13 +144,13 @@ async function setSelectedCar () {
         await menuStore.setStatus({});
 
         await accountStore.startGeoPosWatch();
-        accountStore.loading(false)
         if ( selectedCar.value && settings.value && settings.value.inventarIntervall && settings.value.inventarIntervall > 0 && !carItemsCount.value[selectedCar.value.name] ) {
             router.push( '/inventar' )
         } else {
             //change view
             router.push( '/app/fahrberichte' )
         }
+        accountStore.loading(false)
     } catch (error) {
         accountStore.loading(false)
         console.error('setSelectedCar', error)

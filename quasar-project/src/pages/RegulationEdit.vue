@@ -74,7 +74,7 @@
                 </q-select>
             </div>
         </div>
-        <div class="row whiteBg q-px-sm redLine">
+        <div class="row whiteBg q-px-sm redLine text-black">
             <div class="col-12">
                 <div class="row">
                     <div class="col-6 q-pa-sm">
@@ -207,8 +207,18 @@
                 >
                 </q-select>
             </div>
-            <q-input type="textarea" autogrow class="q-pa-sm col-12 col-md-6 bg-white white" filled label-color="primary" v-model="editItem.newsPatient"  label="Besonderes Patient" stack-label />
-            <q-input type="textarea" autogrow class="q-pa-sm col-12 col-md-6 bg-white white" filled label-color="primary" v-model="editItem.newsCar" label="Besonderes Fahrzeug" stack-label />
+        </div>
+        <div class="row q-mb-sm q-pa-sm bg-white">
+            <q-btn color="primary" unelevated :class="['col-12', 'col-md-3', Screen.gt.sm ? 'order-last' : '']" label="Textbausteine" @click="openTextSnippets('patient')" />
+            <div class="col-12 col-md-9" :class="[Screen.gt.sm ? 'q-pr-sm' : '']">
+                <q-input type="textarea" autogrow class="bg-white white" filled label-color="primary" v-model="editItem.newsPatient"  label="Besonderes Patient" stack-label />
+            </div>
+        </div>
+        <div class="row q-mb-sm q-pa-sm bg-white">
+            <q-btn color="primary" unelevated :class="[ 'col-12', 'col-md-3', Screen.gt.sm ? 'order-last' : '']" label="Textbausteine" @click="openTextSnippets('car')" />
+            <div class="col-12 col-md-9" :class="[Screen.gt.sm ? 'q-pr-sm' : '']">
+                <q-input type="textarea" autogrow class="bg-white white" filled label-color="primary" v-model="editItem.newsCar"  label="Besonderes Fahrzeug" stack-label />
+            </div>
         </div>
         <div class="row q-py-sm">
             <div class="col-12">
@@ -229,17 +239,20 @@
                 />
             </div>
         </div>
+        <text-snippets v-if="messengerStore._showTextSnippets" :type="type"/>
     </div>
 </template>
 
 <script lang="ts" setup>
 import { ref, watch }                                              from 'vue';
 import dayjs                                                from 'dayjs';
-import { uid, extend }                                      from 'quasar';
+import { uid, extend, Screen }                              from 'quasar';
 import Global                                               from '../helpers/Global';
+import TextSnippets                                         from 'src/components/TextSnippets.vue';
 import { useAccountStore }                                  from 'src/stores/account.store';
 import { useAuditStore }                                    from 'src/stores/audit.store';
 import { useKostentraegerStore }                            from 'src/stores/kostentraeger.store';
+import { useMessengerStore }                                from 'src/stores/messenger.store';
 import { useSonderleistungenStore }                         from 'src/stores/sonderleistungen.store';
 import { storeToRefs } from 'pinia';
 
@@ -253,7 +266,7 @@ const emit = defineEmits([
 ])
 
 const global        = Global();
-const   options         = ref([]),
+const options       = ref([]),
     label           = ref('Dateiupload'),
     editItem        = ref( extend( true, {}, props.modelValue) ),
     uploader        = ref(),
@@ -283,6 +296,9 @@ const   options         = ref([]),
 const accountStore          = useAccountStore();
 const auditStore            = useAuditStore();
 
+const messengerStore        = useMessengerStore();
+const { selectedText }     = storeToRefs(messengerStore);
+
 const kostentraegerStore    = useKostentraegerStore();
 const { data: kassen }       = storeToRefs(kostentraegerStore);
 
@@ -302,10 +318,7 @@ const fields = [
 if (!editItem.value.sonderleistungen)
     editItem.value.sonderleistungen = [];
 
-function setInsertData(val: any, field: string, ref: any) {
-    if (ref)
-        ref.hide();
-
+function setInsertData(val: any, field: string) {
     if ( val )
         switch (field) {
             case 'krankenkasse': {
@@ -324,6 +337,13 @@ function setInsertData(val: any, field: string, ref: any) {
         editItem.value.krankenkasse = ''
 }
 
+const type = ref('')
+
+function openTextSnippets( messageType: string ) {
+    type.value = messageType
+    messengerStore._showTextSnippets = true
+}
+
 async function factoryFn ( file: any ) {
         const formdata = new FormData();
         for (const item of fields) {
@@ -334,7 +354,7 @@ async function factoryFn ( file: any ) {
 
         formdata.append( '_id', id);
         formdata.append( 'file', file[0]);
-        
+        console.log(formdata)
         await auditStore.sendFile(formdata);
         file[0].__progress = 100
         file[0].__progressLabel = '100.00%'
@@ -347,6 +367,13 @@ watch(editItem, (val) => {
     if (val)
         emit('update:model-value', editItem.value)
 }, { deep: true })
+
+watch(selectedText, (newVal) => {
+    if (newVal && newVal.type === 'patient')
+        editItem.value.newsPatient = newVal.text
+    if (newVal && newVal.type === 'car')
+        editItem.value.newsCar = newVal.text
+})
 
 function setLabel ( item: string ) {
     if ( item === 'upload' )
@@ -369,12 +396,12 @@ function filterKK (val: string, update: any) {
     })
 }
 
-function removedFile ( files ) {
+function removedFile ( files: any ) {
     if (files.length === 1)
         setLabel('add')
 }
 </script>
-<style scope lang="scss">
+<style lang="scss" scoped>
 
     .header {
         color: $negative
@@ -415,4 +442,21 @@ function removedFile ( files ) {
         color:      $negative;
         font-weight:  bold;
     }
+
+    :deep(.q-field--dark .q-field__native){
+        color: black !important
+    }
+
+    :deep(.q-field--filled.q-field--dark .q-field__control, .q-field--filled.q-field--dark .q-field__control:before) {
+        background: rgba(0, 0, 0, 0.07);
+    }
+
+    :deep(.q-field--dark .q-field__marginal) {
+        color: rgba(0, 0, 0, 0.7);
+    }
+
+    :deep(.q-field--dark .q-field__bottom) {
+        color: rgba(204, 91, 107, 0.7);
+    }
+    
 </style>
