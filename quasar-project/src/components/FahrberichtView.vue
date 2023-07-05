@@ -11,7 +11,6 @@
                 <div class="col-8 col-md-8" v-if="actItem.type === 'Linie'" :class="[Dark.isActive ? '' : 'text-primary']">
                     <div class="row" >Linie</div>
                     <div class="row text-h6">{{actItem.titel}}</div>
-                    {{ actItem.type }}
                 </div>
                 <div class="col-4 col-md-4 text-right">
                     <div class="row text-primary emptyLabel"></div>
@@ -43,7 +42,7 @@
                 </div>
             </div>
             <div class="col-6 q-pb-sm" style="min-height: 45px" v-if="actItem.type !== 'Linie'">
-                <q-btn icon="fas fa-bacterium" @click="(actItem.infektion && actItem.infektionsart) || showStatusButtons ? setShowInfection(true) : ''" align="left" class="full-width text-body1" padding="6px" :color="actItem.infektion ? 'orange' : 'grey'"  >
+                <q-btn unelevated icon="fas fa-bacterium" @click="(actItem.infektion && actItem.itName) || showStatusButtons ? setShowInfection(true) : ''" align="left" class="full-width text-body1" padding="6px" :color="actItem.infektion ? 'orange' : 'grey'"  >
                     <div class="ellipsis q-pl-sm">
                             {{ setInfText() }}
                     </div>
@@ -56,7 +55,7 @@
                     </div>
                     <div class="col-6 ">
                         <div class="row text-body1">
-                            <q-btn :type="actItem.auftraggeberTelefon ? 'a' : 'button'" no-caps :disable="!actItem.auftraggeberTelefon" :href="`tel: ${actItem.auftraggeberTelefon}`" dense class=" col-12 bg-grey-5 text-black text-body1" padding="6px" >
+                            <q-btn unelevated :type="actItem.auftraggeberTelefon ? 'a' : 'button'" no-caps :disable="!actItem.auftraggeberTelefon" :href="`tel: ${actItem.auftraggeberTelefon}`" dense class=" col-12 bg-grey-5 text-black text-body1" padding="6px" >
                                 <div class="ellipsis">
                                     {{actItem.auftraggeberTelefon || na}}
                                 </div>
@@ -70,12 +69,12 @@
                     </div>
                     <div class="col-6 ">
                         <div class="row text-body1">
-                            <q-btn :type="actItem.patientenTelefon ? 'a' : 'button'" no-caps :disable="!actItem.patientenTelefon" :href="`tel: ${actItem.patientenTelefon}`" dense class=" col-12 bg-grey-5 text-black q-mb-sm text-body1" padding="6px" >
+                            <q-btn unelevated :type="actItem.patientenTelefon ? 'a' : 'button'" no-caps :disable="!actItem.patientenTelefon" :href="`tel: ${actItem.patientenTelefon}`" dense class=" col-12 bg-grey-5 text-black q-mb-sm text-body1" padding="6px" >
                                 <div class="ellipsis">
                                     {{actItem.patientenTelefon || na}}
                                 </div>
                             </q-btn>
-                            <q-btn :type="actItem.patientenHandy ? 'a' : 'button'" no-caps :disable="!actItem.patientenHandy" :href="`tel: ${actItem.patientenHandy}`" dense class=" col-12 bg-grey-5 text-black text-body1" padding="6px"  >
+                            <q-btn unelevated :type="actItem.patientenHandy ? 'a' : 'button'" no-caps :disable="!actItem.patientenHandy" :href="`tel: ${actItem.patientenHandy}`" dense class=" col-12 bg-grey-5 text-black text-body1" padding="6px"  >
                                 <div class="ellipsis">
                                     {{actItem.patientenHandy || na}}
                                 </div>
@@ -144,9 +143,10 @@
             <div class="row" v-if="actItem.type !== 'Linie'">
                 <div class="col-12">
                     <q-btn 
+                        unelevated
                         padding="6px"
                         align="center" 
-                        v-if="settings.changeStartTarget === 1 && showStatusButtons && ( actItem.type === 'Spontan' || actItem.type === 'Konsil' )"  
+                        v-if="settings.changeStartTarget === 1 && ( actItem.type === 'Spontan' || actItem.type === 'Konsil' )"  
                         @click="SetShowChangeStartOrTarget()" 
                         class="full-width q-my-sm text-white text-body1" 
                         color="amber-7" 
@@ -157,6 +157,7 @@
             <div class="row" v-if="actItem.type !== 'Linie'">
                 <div class="col">
                     <q-btn 
+                        unelevated
                         padding="6px"
                         v-if="showStatusButtons"
                         align="center"
@@ -182,6 +183,7 @@
                 <q-btn 
                     padding="6px"
                     size="md"
+                    unelevated
                     dense
                     align="center"
                     @click="printEinsatzprotokoll()"
@@ -203,8 +205,8 @@
                         <div class="col-12 text-white text-body1 q-pa-sm" :class="[Dark.isActive ? 'bg-grey-10' : 'bg-primary']">
                             {{ stopgroup[0] }}
                         </div>
-                        <div class="col-12 q-pa-sm bg-grey-4" v-if="showStatusButtons">
-                            <q-btn align="center" class="full-width text-body1" padding="6px" @click="startNavigation(stopgroup[1][0])" color="amber-7" label="Navigation Starten" />
+                        <div class="col-12 q-pa-sm" v-if="showStatusButtons">
+                            <q-btn unelevated align="center" class="full-width text-body1" padding="6px" @click="startNavigation(stopgroup[1][0])" color="amber-7" label="Navigation Starten" />
                         </div>
                     </div>
 
@@ -239,8 +241,8 @@
                                         <div class="col-12 col-sm-5 right" v-if="stop.check !== false && stop.direction == 'Hinfahrt' && showStatusButtons">
                                             <div class="row" :class="{ 'q-mt-md': Screen.lt.sm }" >
                                                 <div class="col-12 ellipsis q-mb-xs q-gutter-sm text-right" >
-                                                    <q-btn class="text-body1" padding="6px"  color="negative" @click="setStatus('keinEinstieg', stop)" label="Kein Einstieg" v-if="!stop.exit"/>
-                                                    <q-btn class="text-body1" padding="6px" color="teal-5"  @click="setStatus(stop.exit ? 'Ausstieg' : 'Einstieg', stop)" :label="stop.exit ? 'Ausstieg' : 'Einstieg'" />
+                                                    <q-btn unelevated class="text-body1" padding="6px"  color="negative" @click="setStatus('keinEinstieg', stop)" label="Kein Einstieg" v-if="!stop.exit"/>
+                                                    <q-btn unelevated class="text-body1" padding="6px" color="teal-5"  @click="setStatus(stop.exit ? 'Ausstieg' : 'Einstieg', stop)" :label="stop.exit ? 'Ausstieg' : 'Einstieg'" />
                                                 </div>
                                             </div>
                                         </div>
@@ -248,8 +250,8 @@
                                             <div class="row" :class="{ 'q-mt-md': Screen.lt.sm }">
                                                 <div class="col-12 ellipsis q-mb-xs q-gutter-sm text-right" >
                                                     
-                                                    <q-btn class="text-body1" padding="6px" color="negative" @click="setStatus('keinEinstieg', stop)" v-if="!stop.exit" label="Kein Einstieg" />
-                                                    <q-btn class="text-body1" padding="6px" color="teal-5" @click="setStatus(stop.exit ? 'Ausstieg' : 'Einstieg', stop)" :label="stop.exit ? 'Ausstieg' : 'Einstieg'" />
+                                                    <q-btn unelevated class="text-body1" padding="6px" color="negative" @click="setStatus('keinEinstieg', stop)" v-if="!stop.exit" label="Kein Einstieg" />
+                                                    <q-btn unelevated class="text-body1" padding="6px" color="teal-5" @click="setStatus(stop.exit ? 'Ausstieg' : 'Einstieg', stop)" :label="stop.exit ? 'Ausstieg' : 'Einstieg'" />
                                                 </div>
                                             </div>
                                         </div>
@@ -275,7 +277,7 @@
 
                             <div class="row text-body1 q-pa-sm" v-if=" stopgroup[0] == 'Ausrückzeit' && showStatusButtons">
                                 <div class="col-12">
-                                    <q-btn class="full-width text-body1" padding="6px" @click="setStatus('startBegin')" color="primary" :label="actItem.startBegin ? `Anfahrt (${actItem.startBegin})` : 'Anfahrt'" />
+                                    <q-btn unelevated class="full-width text-body1" padding="6px" @click="setStatus('startBegin')" color="primary" :label="actItem.startBegin ? `Anfahrt (${actItem.startBegin})` : 'Anfahrt'" />
                                 </div>
                             </div>
 
@@ -286,7 +288,7 @@
                             </div>
                             <div class="row text-body1 q-pa-sm" v-if="stop.ziel && stopgroup[0] !== 'Ausrückzeit' && stop.direction !== 'Rückfahrt' && showStatusButtons">
                                 <div class="col-12">
-                                    <q-btn class="full-width text-body1" padding="6px" color="primary" :label="actItem.zielBegin ? `Ankunft Zielort (${actItem.zielBegin})` : 'Ankunft Zielort'" @click="setStatus('zielBegin')" />
+                                    <q-btn unelevated class="full-width text-body1" padding="6px" color="primary" :label="actItem.zielBegin ? `Ankunft Zielort (${actItem.zielBegin})` : 'Ankunft Zielort'" @click="setStatus('zielBegin')" />
                                 </div>
                             </div>
                         </div>
@@ -295,20 +297,20 @@
             </template>
             <div class="row">
                 <div class="col-6 q-pr-xs" v-if="actItem.type == 'Linie' && showStatusButtons" :class="{ 'q-pr-xs': $q.screen.gt.sm, 'q-pb-sm': $q.screen.lt.md }">
-                    <q-btn align="center" class="full-width text-body1" padding="6px" @click="showTripAbort = true" color="negative" label="Fahrt Abbrechen" />
+                    <q-btn unelevated align="center" class="full-width text-body1" padding="6px" @click="showTripAbort = true" color="negative" label="Fahrt Abbrechen" />
                 </div>
                 <div class="col-6 q-pl-xs" v-if="actItem.type == 'Linie' && showStatusButtons" :class="{ 'q-pr-xs': $q.screen.gt.sm, 'q-pb-sm': $q.screen.lt.md }">
-                    <q-btn align="center" class="full-width text-body1" padding="6px" @click="setStatus('frei')" color="primary" label="Frei" />
+                    <q-btn unelevated align="center" class="full-width text-body1" padding="6px" @click="setStatus('frei')" color="primary" label="Frei" />
                 </div>
             </div>
             
             <q-dialog
                 v-model="showInfection"
                 persistent
-                transition-show="jump-right"
-                transition-hide="jump-right"
+                transition-show="jump-down"
+                transition-hide="jump-down"
             >
-                <q-card class="bg-white" style="width: 700px;" v-if="!settings.changeInfektion || previewFb ">
+                <q-card style="width: 700px;" v-if="!settings.changeInfektion || previewFb ">
                     <q-bar class="q-pa-lg text-h6 text-white bg-primary">
                         {{actItem.itName || 'Infektion ohne Infektionsart'}}
                     </q-bar>
@@ -320,9 +322,9 @@
                         
                     </div>
                     <q-separator />
-                    <q-card-actions class="row q-px-lg q-py-sm bg-grey-3">
+                    <q-card-actions class="row q-px-lg q-py-sm" :class="[Dark.isActive ? 'bg-grey-10' : 'bg-grey-3']">
                         <div class="col-12 q-px-sm">
-                            <q-btn align="center" class="full-width text-body1" padding="6px" color="primary" v-close-popup label="Ok" />
+                            <q-btn unelevated align="center" class="full-width text-body1" padding="6px" color="primary" v-close-popup label="Ok" />
                         </div>
                     </q-card-actions>
                 </q-card>
@@ -349,7 +351,7 @@
                             </div>
                             <div class="col-10 q-pt-sm text-body1">
                                 <div class="row">
-                                    <div class="col-12 text-bold q-pb-sm">Infektion</div>
+                                    <div class="col-12 text-bold q-pb-sm" :class="[actItem.infektion && !actItem.infectionType ? 'text-orange' : '']">Infektion</div>
                                     <div class="col-12" style="white-space: pre-line">Infektion ohne Infektionsart</div>
                                 </div>
                             </div>
@@ -361,7 +363,7 @@
                             </div>
                             <div class="col-10 q-pt-sm text-body1">
                                 <div class="row">
-                                    <div class="col-12 text-bold q-pb-sm ellipsis">{{item.infektionsName}}</div>
+                                    <div class="col-12 text-bold q-pb-sm ellipsis" :class="[actItem.infectionType === item._id ? 'text-orange' : '']">{{item.infektionsName}}</div>
                                     <div class="col-12" style="white-space: pre-line">{{item.desc}}</div>
                                 </div>
                             </div>
@@ -371,10 +373,10 @@
                     <q-separator />
                     <q-card-actions class="row q-px-lg q-py-sm" :class="[Dark.isActive ? 'bg-grey-10' : 'bg-grey-3']">
                         <div class="col-6 q-px-sm">
-                            <q-btn align="center" class="full-width text-body1" padding="6px" color="negative" v-close-popup label="Abbrechen" />
+                            <q-btn unelevated align="center" class="full-width text-body1" padding="6px" color="negative" v-close-popup label="Abbrechen" />
                         </div>
                         <div class="col-6 q-px-sm">
-                            <q-btn align="center" class="full-width text-body1" padding="6px" color="primary" v-close-popup @click="save('infection')" label="Speichern" />
+                            <q-btn unelevated align="center" class="full-width text-body1" padding="6px" color="primary" v-close-popup @click="save('infection')" label="Speichern" />
                         </div>
                     </q-card-actions>
                 </q-card>
@@ -391,8 +393,8 @@
             <q-dialog
                 v-model="showChangeStartOrTarget"
                 persistent
-                transition-show="jump-right"
-                transition-hide="jump-right">
+                transition-show="jump-down"
+                transition-hide="jump-down">
                 <q-card style="width: 700px;">
                     <q-bar class="q-pa-lg text-h6 text-white bg-primary">
                         Start/Ziel ändern
@@ -412,7 +414,7 @@
                                 <q-input filled  label-color="primary" v-model="fbChangeStartTarget.startInfo" autogrow label="Info Start" stack-label/>
                             </div>
                             <div class="col-12 q-pt-sm">
-                                <q-btn align="center"  @click="getMyLocation('start')" class="full-width q-mb-sm text-white text-body1" padding="6px" color="amber-7" label="Standort als Start eintragen" />
+                                <q-btn unelevated align="center"  @click="getMyLocation('start')" class="full-width q-mb-sm text-white text-body1" padding="6px" color="amber-7" label="Standort als Start eintragen" />
                             </div>
                         </div>
                         <div class="row q-py-md">
@@ -429,14 +431,14 @@
                                 <q-input filled  label-color="primary" v-model="fbChangeStartTarget.targetInfo" autogrow label="Info Ziel" stack-label/>
                             </div>
                             <div class="col-12 q-pt-sm">
-                                <q-btn align="center"  @click="getMyLocation('target')" class="full-width q-mb-sm text-white text-body1" padding="6px" color="amber-7" label="Standort als Ziel eintragen" />
+                                <q-btn unelevated align="center"  @click="getMyLocation('target')" class="full-width q-mb-sm text-white text-body1" padding="6px" color="amber-7" label="Standort als Ziel eintragen" />
                             </div>
                         </div>
                     </q-card-section>
                     <q-separator />
                     <q-card-actions align="center"  class="row" :class="[Dark.isActive ? 'bg-grey-10' : 'bg-grey-3']">
-                        <q-btn align="center" class="col-5 text-body1" padding="6px" color="negative" v-close-popup label="Abbrechen" />
-                        <q-btn align="center" class="col-5 text-body1" padding="6px" color="primary" @click="save()" label="Speichern" />
+                        <q-btn unelevated align="center" class="col-5 text-body1" padding="6px" color="negative" v-close-popup label="Abbrechen" />
+                        <q-btn unelevated align="center" class="col-5 text-body1" padding="6px" color="primary" @click="save()" label="Speichern" />
                     </q-card-actions>
                 </q-card>
             </q-dialog>
@@ -444,8 +446,8 @@
             <q-dialog
                 v-model="showTimestamps"
                 persistent
-                transition-show="jump-right"
-                transition-hide="jump-right">
+                transition-show="jump-down"
+                transition-hide="jump-down">
                 <q-card style="width: 700px;">
                     <q-bar class="q-pa-lg text-h6 text-white bg-primary">
                         Zeitstempel
@@ -486,7 +488,7 @@
                     </q-card-section>
                     <q-separator />
                     <q-card-actions align="center"  class="row" :class="[Dark.isActive ? 'bg-grey-10' : 'bg-grey-3']">
-                        <q-btn align="center" class="col-12 text-body1" padding="6px" color="negative" v-close-popup label="Schliessen" />
+                        <q-btn unelevated align="center" class="col-12 text-body1" padding="6px" color="negative" v-close-popup label="Schliessen" />
                     </q-card-actions>
                 </q-card>
             </q-dialog>
@@ -498,7 +500,7 @@
 <script lang="ts" setup>
 import { ref, watch, onBeforeMount }                        from 'vue';
 import { useRouter, useRoute }                              from 'vue-router';
-import Global                                               from '../helpers/Global';
+import {Global}                                               from '../helpers/Global';
 import CustDialog                                           from 'src/components/Dialog.vue'
 import MusterVier                                           from 'src/components/MusterVier.vue';
 import FahrberichtStatusView                                from 'src/components/FahrberichtStatusView.vue';
@@ -726,7 +728,7 @@ async function setStatus ( status: string, stop?: IStopItem  ) {
             beifahrer:      beifahrer.value?._id,
             _id:            actItem.value?._id,
             status,
-            date:           actItem.value?.date,
+            date:           actItem.value?.date
         }
     } else {
         if (!stop)
@@ -761,7 +763,7 @@ function tripAbort () {
 }
 
 function setInfText() {
-    if ( actItem.value.infektion )
+    if ( actItem.value.infektion && !actItem.value.itName )
         return 'Infektion ohne Infektionsart'
 
     if ( actItem.value.itName )
@@ -797,8 +799,10 @@ onBeforeMount(() => {
     accountStore.setSecondHeader('')
     if ( actItem.value?.type === 'Linie' )
         accountStore.setTitle(actItem.value?.titel)
-    else
-        accountStore.setTitle(`${actItem.value.patSurname}, ${actItem.value.patName}`)
+    else {
+        const title = navStore.setTitle(actItem.value)
+        accountStore.setTitle(title)
+    }
 });
 </script>
 <style scope lang="scss">

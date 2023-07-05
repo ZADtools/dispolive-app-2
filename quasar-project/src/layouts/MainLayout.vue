@@ -2,7 +2,14 @@
     <div >
         <cust-layout view="lHh Lpr lFf" headerClass="q-pa-none" >
             <template #header>
-                <q-dialog v-model="lockDevice" v-if="lockDevice" persistent class="unlockDialog">
+                <q-dialog 
+                    v-model="lockDevice" 
+                    v-if="lockDevice" 
+                    persistent 
+                    class="unlockDialog"
+                    transition-show="jump-down"
+                    transition-hide="jump-down"
+                >
                     <q-card style="background: 'transparent'">
                         <q-card-actions vertical align="bottom">
                             <q-list >
@@ -30,7 +37,7 @@
                     
                     <q-btn flat dense round icon="lock" aria-label="Menu" @click="setLockDevice" />
                 </q-toolbar>
-                <second-header v-if="secondHeader" />
+                <second-header v-show="secondHeader" />
             </template>
             <template #drawer>
                 <q-drawer v-model="leftDrawerOpen" v-if="!isScanning" show-if-above bordered class="menu-drawer">
@@ -45,7 +52,7 @@
                         </q-item-section>
 
                         <q-item-section>
-                            <q-item-label class="text-bold">{{selectedCar.name}}</q-item-label>
+                            <q-item-label class="text-bold">{{selectedCar && selectedCar.name}}</q-item-label>
                         </q-item-section>
 
                         <q-item-section avatar :class="carStatus.status" class="text-white menu-status">
@@ -85,8 +92,8 @@
             @update:modelValue="(val) => readAppCarNote()"  
         />
         <Dialog 
-            v-if="lastDeletedItem && lastDeletedItem.item" 
-            :modelValue="lastDeletedItem.item ? true : false" 
+            v-if="lastDeletedItem" 
+            :modelValue="lastDeletedItem ? true : false" 
             :text="setDeleteText(lastDeletedItem)" 
             okLabel="Ok" 
             :func="fahrberichteStore.setLastDeletedItem" 
@@ -97,9 +104,9 @@
 
 <script type="ts" setup>
 import { onBeforeMount, ref, watch, onUnmounted }                               from 'vue';
-import  { useRouter, useRoute }                                                           from 'vue-router';
+import  { useRouter, useRoute }                                                 from 'vue-router';
 import MenuLink                                                                 from '../components/MenuLink.vue';
-import Global                                                                   from '../helpers/Global';
+import { Global }                                                               from '../helpers/Global';
 import dayjs                                                                    from 'dayjs';
 import Dialog                                                                   from '../components/Dialog.vue';
 import SecondHeader                                                             from 'src/components/SecondHeader.vue';
@@ -124,12 +131,16 @@ import { useAudioStore }                                                        
 import { useFahrberichtStore }                                                  from 'src/stores/fahrbericht.store';
 import { useCardreaderStore }                                                   from 'src/stores/cardreader.store';
 import { useSocketStore }                                                       from 'src/stores/socket.store';
+import { useKategorienStore }                                                   from 'src/stores/kategorien.store';
+import { useTransportartStore }                                                 from 'src/stores/transportart.store';
+import { useVerordnungsartStore }                                               from 'src/stores/verordnungsart.store';
 import { storeToRefs }                                                          from 'pinia';
 import CustLayout                                                               from 'src/components/Layout.vue';
 import debug                                                                    from 'debug';
+import { useAuditStore }                                                        from 'src/stores/audit.store';
 const log                                                                       = debug('app:MainLayout');
 
-const accountStore                                                             = useAccountStore();
+const accountStore    = useAccountStore();
 const   { 
     title, 
     secondHeader, 
@@ -139,7 +150,7 @@ const   {
     pauseDialog,
     lockDevice,
     callDialog,
-    logoutDialog
+    logoutDialog,
 } = storeToRefs(accountStore);
 
 const fahrzeugeStore  = useFahrzeugeStore();
@@ -169,6 +180,7 @@ const { data: textBausteine, messengerLoad, unread} = storeToRefs(messengerStore
 const cardReaderStore = useCardreaderStore();
 const { isScanning } = storeToRefs(cardReaderStore);
 
+const auditStore = useAuditStore();
 const audioStore = useAudioStore();
 const patientenStore = usePatientenStore();
 const kostentraegerStore = useKostentraegerStore();
@@ -178,6 +190,11 @@ const infektionenStore = useInfektionenStore();
 const coststatusStore = useCoststatusStore();
 const sonderleistungenStore = useSonderleistungenStore();
 const fahrberichtStore = useFahrberichtStore();
+const kategorienStore = useKategorienStore();
+const transportartStore = useTransportartStore();
+const verordnungsartStore = useVerordnungsartStore();
+const socketStore = useSocketStore();
+const { connected: socketConnected } = storeToRefs(socketStore);
 
 const   leftDrawerOpen          = ref(false)
 const   loadedData              = ref(false)
@@ -235,6 +252,12 @@ onBeforeMount( async () => {
         log('getMessages done')
         await messengerStore.getData();
         log('getTextSnippets done');
+        await kategorienStore.getData();
+        log('getKategorien done');
+        await transportartStore.getData();
+        log('getTransportart done');
+        await verordnungsartStore.getData();
+        log('getVerordnungsart done');
 
         //get navigation points
         linksList.value = global.navigation.filter( (item) => {
@@ -242,6 +265,8 @@ onBeforeMount( async () => {
             if ( settings.value.kontakte === 1 && item.link === 'contact' )
                 return false
             else if ( settings.value.dienstplan === 1 && item.link === 'checklistEmployee' )
+                return false
+            else if ( device.value.platform === 'android' && item.link === 'cardreader' )
                 return false
             else
                 return true
@@ -255,7 +280,7 @@ onBeforeMount( async () => {
 
         accountStore.loading(false)
 
-        const welcome = Notify.create({
+        Notify.create({
             message: '<div class="text-bold">dispolive ist nun einsatzbereit.</div>Wir wünschen Ihnen einen angenehmen Arbeitstag.',
             position: 'center',
             progress: true,
@@ -264,7 +289,7 @@ onBeforeMount( async () => {
             color: 'secondary',
             classes: 'glossy',
             actions: [
-                { label: 'Schliessen', glossy:true, class:'bg-teal-8',  color: 'white', handler: () => { welcome(false) } }
+                { label: 'Schliessen', glossy:true, class:'bg-teal-8',  color: 'white', handler: () => { } }
             ]
         })
     } catch (err) {
@@ -302,15 +327,15 @@ function setUnlockDevice () {
 }
 
 function setDeleteText ( item ) {
-    let text = item.item.patSurname + ', ' + item.item.patName;
+    let text = item.patSurname + ', ' + item.patName;
 
-    if ( !item.item.patSurname && !item.item.patName && !item.item.materialfahrt)
+    if ( !item.patSurname && !item.patName && !item.materialfahrt)
         text = 'Keine Patientenangaben vorhanden'
 
-    if ( item.item.type === 'Linie' )
-        text = item.item.titel
+    if ( item.type === 'Linie' )
+        text = item.titel
 
-    if ( item.item.materialfahrt )
+    if ( item.materialfahrt )
         text = 'Materialfahrt'
 
     return `Die Fahrt <b>${text}</b> wurde Ihnen vom Disponenten entzogen!`
@@ -330,6 +355,10 @@ function readAppCarNote() {
     accountStore.msgRead( appCarNote.value )
     accountStore.sendAppCarNote({car: selectedCar.value._id});
 }
+
+watch([networkConnected, socketConnected], () => {
+    auditStore.sendData()
+})
 
 watch( navItems, ( newVal ) => {
     log('observe navItems length', newVal, carStatus.value)
@@ -355,7 +384,6 @@ watch( navItems, ( newVal ) => {
 function callLogout() {
     accountStore.logout();
     router.push( '/' )
-    //window.location.reload()
 }
 </script>
 

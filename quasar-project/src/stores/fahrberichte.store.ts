@@ -1,7 +1,7 @@
 import { defineStore, storeToRefs }     from 'pinia';
 import Debug                            from 'debug';   
 import dayjs                            from 'dayjs';
-import { useMenuStore, IFahrbericht }                 from './menu.store';
+import { useMenuStore, IFahrbericht }   from './menu.store';
 import { useFahrberichtStore }          from './fahrbericht.store';
 import { useNavStore }                  from './nav.store';
 import { useAuditStore }                from './audit.store';
@@ -11,8 +11,8 @@ import { useAudioStore }                from './audio.store';
 import { useAccountStore }              from './account.store';
 import { useSocketStore }               from './socket.store';
 import { LocalNotifications }           from '@capacitor/local-notifications';
-import * as jsondiffpatch               from 'jsondiffpatch';
-import Global                           from 'src/helpers/Global';
+import * as jsonDiff                    from 'jsondiffpatch-rc';
+import { Global }                       from 'src/helpers/Global';
 
 const global = Global()
 const log       = Debug('app:fahrberichte.module');
@@ -21,7 +21,7 @@ export interface IFahrberichteState {
     _data:           IFahrbericht[];
     _actDay:         string;
     _previewFb:      boolean;
-    _lastDeletedItem: string;
+    _lastDeletedItem: IFahrbericht | null;
     _selectedDay:      string;
 }
 
@@ -30,7 +30,7 @@ export const useFahrberichteStore = defineStore('fahrberichteStore', {
         _data:                   [],
         _actDay:                 '',
         _previewFb:              false,
-        _lastDeletedItem:        '',
+        _lastDeletedItem:        null,
         _selectedDay:            'today'
     }),
     getters: {
@@ -67,7 +67,7 @@ export const useFahrberichteStore = defineStore('fahrberichteStore', {
             
             return fb || {};
         },
-        setLastDeletedItem( item: string ) {
+        setLastDeletedItem( item: IFahrbericht ) {
             this._lastDeletedItem = item;
         },
         async updateItem( fahrbericht: IFahrbericht ) {
@@ -120,9 +120,11 @@ export const useFahrberichteStore = defineStore('fahrberichteStore', {
         },
         deleteItem( id: string ) {
             const index    = this._data && this._data.findIndex( item => item._id === id );
-
-            if ( index > -1 )
+            if ( index > -1 ) {
+                const fb =  this._data[index];
                 this._data.splice( index, 1 );
+                return fb
+            }
         },
         async getChangesFb( ) {
             const fahrzeugeStore    = useFahrzeugeStore();
@@ -133,10 +135,13 @@ export const useFahrberichteStore = defineStore('fahrberichteStore', {
             const auditStore        = useAuditStore();
             const accountStore      = useAccountStore();
             const { item: accCar }    = storeToRefs( fahrzeugeStore );
+            if (!accCar.value?._id)
+                return 
+
             const car = accCar.value?._id || '';
 
             const data: any     = await accountService.getDataSocket( { event: 'getFBChanges', param: { car } } );
-            
+
             const sendungsData = {
                 carNo:              car,
                 date:               dayjs().format('YYYY-MM-DD'),
@@ -144,23 +149,23 @@ export const useFahrberichteStore = defineStore('fahrberichteStore', {
                 _id:                null,
                 status:             ''
             }
-            log(sendungsData)
+            // log(sendungsData)
 
             if ( data && data.length > 0 ) {
                 data.forEach(( elm: any ) => {
                     if ( elm.delete ) {
                         try {
                             this.setPreviewFb(false)
-                            this.deleteItem( elm.fbId )
+                            const fb = this.deleteItem( elm.fbId )
                             global.removeStore(elm.fbId)
                             global.setSelectedNavPoint();
                             navStore.removeNavPoint({_id: elm.fbId});
-                            
-                            console.log(fahrberichtStore._item, elm.fbId)
+
                             if ( fahrberichtStore._item?._id === elm.fbId )
                                 this.router.push({path: '/app/fahrberichte'})
 
                             fahrberichtStore.removeSelectedItem(elm.fbId);
+                            this._lastDeletedItem = fb || null;
                         } catch (error) {
                             console.log('error', error)
                         }
@@ -181,7 +186,6 @@ export const useFahrberichteStore = defineStore('fahrberichteStore', {
                         const exists = this._data.find(( item ) => {
                             return item._id === elm.fbId
                         });
-                        console.log('exists', exists, elm.item)
 
                         //check if item empty
                         const notEmpty = Object.keys(elm.item || {}).length > 0;
@@ -190,8 +194,8 @@ export const useFahrberichteStore = defineStore('fahrberichteStore', {
                             let  item;
 
                             if ( exists ) { 
-                                item = jsondiffpatch.patch( {...exists}, elm.item);
-                                item.sendStatusRead = '';
+                                item = jsonDiff.patch( {...exists}, elm.item);
+                                item.sendStatusRead = false;
                                 if (
                                     fahrberichtStore._item?._id &&
                                     ( 
@@ -226,20 +230,18 @@ export const useFahrberichteStore = defineStore('fahrberichteStore', {
                                 auditStore.setItem( { type: 'sendungsstatus', value: sendungsData, fb: item } );
                                 this.updateItem( item )
 
-                                if (!fahrberichtStore._item?._id)
+                                if (!fahrberichtStore._item?._id || fahrberichtStore._item?._id === item._id)
                                     fahrberichtStore.setShowItem( item )
                                 
                                 accountStore.globalDispatcher( item )
                                 navStore.updateNavPoint(item)
                             } else {     
-                                const item = jsondiffpatch.patch({}, elm.item)
-
+                                const item = jsonDiff.patch({}, elm.item)
                                 sendungsData.fbId       = item._id;
                                 sendungsData._id        = item._id;
                                 sendungsData.status     = 'sendStatusArrived';
 
                                 auditStore.setItem( { type: 'sendungsstatus', value: sendungsData, fb: item } );
-
                                 this.insertItem( item )
                                 menuStore.setProgress(item)
 

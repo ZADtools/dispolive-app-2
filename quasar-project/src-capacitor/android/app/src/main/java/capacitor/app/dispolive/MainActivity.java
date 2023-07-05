@@ -1,4 +1,4 @@
-package capacitor.app.dispolive;
+package app.dispoliveZadTools.de;
 
 import com.getcapacitor.BridgeActivity;
 

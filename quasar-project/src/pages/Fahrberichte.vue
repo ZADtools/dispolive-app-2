@@ -54,26 +54,26 @@
             @update:model-value="(val) => { fahrberichteStore.setPreviewFb(val); accountStore.setTitle('Fahrten'); }"
             persistent
             :maximized="true"
-            transition-show="jump-right"
-            transition-hide="jump-right">
+            transition-show="jump-down"
+            transition-hide="jump-down">
             <q-card :class="[device.platform == 'android' ? 'saveAreaAndroid' : '']">
                 <q-card-actions class="row q-px-sm q-pt-sm" :class="[Dark.isActive ? 'bg-grey-10' : 'bg-grey-3']">
                     <div class="q-pr-sm" :class="{'col-6': fbItem && fbItem.date === dayjs().format('YYYY-MM-DD'), 'col-12': fbItem && fbItem.date !== dayjs().format('YYYY-MM-DD')}">
-                        <q-btn class="full-width text-body1" padding="6px" @click="closePreview()" color="negative" >
+                        <q-btn unelevated class="full-width text-body1" padding="6px" @click="closePreview()" color="negative" >
                             <div class="ellipsis">
                                 Zurück
                             </div>
                         </q-btn>
                     </div>
                     <div class="col-6 q-pl-sm" v-if="fbItem && fbItem.date === dayjs().format('YYYY-MM-DD') && fbItem.frei && fbItem.type !== 'Linie'">
-                        <q-btn class="full-width text-body1" padding="6px" @click="showInsertData" color="primary" >
+                        <q-btn unelevated class="full-width text-body1" padding="6px" @click="showInsertData" color="primary" >
                             <div class="ellipsis">
                                 Daten ergänzen
                             </div>
                         </q-btn>
                     </div>
                     <div class="col-6 q-pl-sm" v-if="fbItem && fbItem.date === dayjs().format('YYYY-MM-DD') && !fbItem.frei">
-                        <q-btn class="full-width text-body1" padding="6px" @click="showAskDialog()" color="primary" >
+                        <q-btn unelevated class="full-width text-body1" padding="6px" @click="showAskDialog()" color="primary" >
                             <div class="ellipsis">
                                 Fahrt annehmen
                             </div>
@@ -119,30 +119,31 @@ import { extend, Dark }                                             from 'quasar
 import dayjs                                                        from 'dayjs';
 import { storeToRefs, defineStore }                                 from 'pinia';
 import debug                                                        from 'debug';
+import axios                                                        from 'src/boot/axios';
 
-const log                                                           = debug('app:fahrberichte')
-const accountStore          = useAccountStore()
-const { darkMode, device }  = storeToRefs(accountStore)
+const log                                  = debug('app:fahrberichte')
+const accountStore                         = useAccountStore()
+const { darkMode, device }                 = storeToRefs(accountStore)
 
-const fahrberichtStore      = useFahrberichtStore()
-const { item: fbItem }      = storeToRefs(fahrberichtStore)
+const fahrberichtStore                     = useFahrberichtStore()
+const { item: fbItem }                     = storeToRefs(fahrberichtStore)
 
-const fahrberichteStore     = useFahrberichteStore()
+const fahrberichteStore                    = useFahrberichteStore()
 const {data: getTrips, previewFb, actDay } = storeToRefs(fahrberichteStore)
 
-const menuStore             = useMenuStore()
-const {progress}           = storeToRefs(menuStore)
+const menuStore                            = useMenuStore()
+const {progress}                           = storeToRefs(menuStore)
 
-const auditStore            = useAuditStore()
+const auditStore                           = useAuditStore()
 
-const settingsStore         = useSettingsStore()
-const {item: settings}      = storeToRefs(settingsStore)
+const settingsStore                        = useSettingsStore()
+const {item: settings}                     = storeToRefs(settingsStore)
 
-const navStore              = useNavStore()
-const {searchItem: searchNavPoint} = storeToRefs(navStore)
+const navStore                             = useNavStore()
+const {searchItem: searchNavPoint}         = storeToRefs(navStore)
 
-const serienKategorienStore = useSerienKategorienStore()
-const {data: serienKategorien}    = storeToRefs(serienKategorienStore)
+const serienKategorienStore                = useSerienKategorienStore()
+const {data: serienKategorien}             = storeToRefs(serienKategorienStore)
 
 const   askDialog             = ref(false),
         actItem               = ref({}),
@@ -182,6 +183,7 @@ async function showTrip ( item: IFahrbericht ) {
     if (existNavPoint) {
         actItem.value = item;
         navStore.setSelected(existNavPoint)
+        fahrberichtStore.setShowItem( item );
         router.push( `/app/fahrberichtactiv/${item._id}`)
     } else {
         fahrberichtStore.setShowItem( item );
@@ -192,7 +194,7 @@ async function showTrip ( item: IFahrbericht ) {
 
 function showAskDialog () {
     const fb = fbItem.value;
-
+console.log('11111', fb)
     if ( fb && (fb.startBegin || fb.startEnd || fb.ziel || fb.zielBegin || fb.frei) )
         askDialog.value = true;
     else
@@ -200,7 +202,6 @@ function showAskDialog () {
 }
 
 async function tripAccept (removeTimestamps?: boolean) {
-    console.log('44444')
     // register dynamic module for data handling
     log( 'create dynamic trip', fbItem.value?._id );
     if (!fbItem.value)
@@ -215,10 +216,11 @@ async function tripAccept (removeTimestamps?: boolean) {
             await auditStore.setItem({type: 'fahrbericht', value: fbItem.value, fb: fbItem.value, noAlert: true });
         }
         //create dynamed store für fb
-        const useDynamedStore = defineStore( fbItem.value._id, FahrberichtModule.fahrberichtModule);
+        const useDynamedStore = defineStore( fbItem.value._id, FahrberichtModule.fahrberichtModule());
         const dynamedStore: any = useDynamedStore();
         dynamedStore.setAcceptItem(fbItem.value);
-        accountStore.setTitle(fbItem.value.titel || '')
+        const title = navStore.setTitle(fbItem.value)
+        accountStore.setTitle(title || '')
         router.push(`/app/fahrberichtactiv/${fbItem.value._id}`)
         setTimeout( async () => {
             await menuStore.setStatus({fbId: fbItem.value?._id})
@@ -273,6 +275,7 @@ function setTimeText( item: IFahrbericht ) {
 function closePreview () {
     fahrberichteStore.setPreviewFb( false );
     accountStore.setSecondHeader('Fahrberichte');
+    accountStore.setTitle('Fahrten')
 }
 </script>
 

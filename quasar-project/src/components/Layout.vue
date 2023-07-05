@@ -49,11 +49,14 @@ const props = defineProps({
     headerClass: {
         type: String,
         default: 'q-pa-md'
+    },
+    login: {
+        type: Boolean,
+        default: false
     }
 })
-
 const accountStore = useAccountStore()
-const { secondHeader, title } = storeToRefs( accountStore )
+const { secondHeader, title, keyboardHeight } = storeToRefs( accountStore )
 
 const cardReaderStore = useCardreaderStore()
 const { isScanning } = storeToRefs( cardReaderStore )
@@ -88,7 +91,7 @@ function calcVar () {
     paddingTop.value = Platform.is.ios ? 'env(safe-area-inset-top)' : ''
     paddingTopheader.value = Platform.is.ios ? 'env(safe-area-inset-top)' : ''
     height.value = Platform.is.ios ? 'calc(100vh - env(safe-area-inset-bottom))' : '100vh'
-    contentHeight.value = Platform.is.ios ? `calc(100vh - env(safe-area-inset-bottom) - env(safe-area-inset-top) - ${68 + secondHeaderHeight}px)` : `calc(100vh- ${68 + secondHeaderHeight}px)`
+    contentHeight.value = Platform.is.ios ? `calc(100vh - env(safe-area-inset-bottom) - env(safe-area-inset-top) - ${(props.login ? 15 : 68) + secondHeaderHeight}px)` : `calc(100vh - ${(props.login ? 15 : 68) + secondHeaderHeight}px)`
 
     if ( props.header )
         paddingTopheader.value = Platform.is.ios ? `calc(env(safe-area-inset-top) + ${firshHeaderHeight + secondHeaderHeight}px)` : `calc(${firshHeaderHeight + secondHeaderHeight}px)`

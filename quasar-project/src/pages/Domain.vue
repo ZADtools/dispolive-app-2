@@ -17,7 +17,7 @@
                             label="Domain"  suffix='.dispolive.de'
                             :rules="[ val => !!val || 'Domain muss angegeben werden!' ]"
                             />
-                        <q-btn color="primary" label="Speichern" type="submit" class="full-width q-mt-md text-body1" padding="6px" />
+                        <q-btn unelevated color="primary" label="Speichern" type="submit" class="full-width q-mt-md text-body1" padding="6px" />
                         <div class="text-body1 col q-pa-sm">Beispiel: Lautet Ihre Domain 'musterdomain.dispolive.de', dann tragen Sie bitte 'musterdomain' ein.</div>
                     </q-form>
                 </q-card-section>

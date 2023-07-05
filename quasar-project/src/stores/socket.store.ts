@@ -4,10 +4,13 @@ import { useAccountStore }                  from './account.store';
 import { useMenuStore }                     from './menu.store';
 import { useMessengerStore }                from './messenger.store';
 import { useFahrberichteStore }             from './fahrberichte.store';
+import { useAuditStore }                    from './audit.store';
 import io                                   from 'socket.io-client';
 import { ISocket4, sock4 }                  from '@w4b/socket-4';
 import { App }                              from '@capacitor/app';
 import { LocalNotifications }               from '@capacitor/local-notifications';
+import { useAudioStore }                    from './audio.store';
+import { nextTick }                         from 'vue';
 
 const log       = Debug('app:socket.module');
 
@@ -34,8 +37,9 @@ export const useSocketStore = defineStore('socketStore', {
             log('remove')
             sockHdl = await sockHdl.off();
             sockHdl = null;
-            log('remove done', sockHdl)
+            console.log('remove done', sockHdl)
             this._connected = false;
+            this.$dispose();
         },
 
         async init( ) {
@@ -66,7 +70,7 @@ export const useSocketStore = defineStore('socketStore', {
             return new Promise( ( resolve, reject) => {
                 try {
                     sockHdl.on('connect', () => {
-                        log('socket connected')
+                        console.log('socket connected')
                         this._connected = true;
       
                         const fahrberichteStore = useFahrberichteStore();
@@ -103,6 +107,8 @@ export const useSocketStore = defineStore('socketStore', {
                             return;
 
                         const stat = await menuStore.setStatus({status: 'pause'})
+                        const audioStore = useAudioStore();
+                        audioStore.play( 'pause' )
 
                         if ( stat?.error === 'activeTrips' ) {
                             accountStore.setPauseDialog(true)

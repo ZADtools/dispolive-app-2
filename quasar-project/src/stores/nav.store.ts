@@ -89,7 +89,7 @@ export const useNavStore = defineStore('navStore', {
 
             if ( !item.patSurname && !item.patName )
                 title = 'Keine Patientenangaben vorhanden'
-
+console.log('tttt', title)
             if ( item.type === 'Linie' )
                 title = item.titel || '';
 

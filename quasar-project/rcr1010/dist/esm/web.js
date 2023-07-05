@@ -5,22 +5,28 @@ export class Rcr1010Web extends WebPlugin {
             value: false
         };
     }
+
     async isPairing() {
         return {
             value: false
         };
     }
+
     async isScanning() {
         return {
             value: false
         };
     }
+
     async startScan() {
     }
+
     async stopScan() {
     }
+
     async stopPairing() {
     }
+
     async startPairing(_options) {
         return {
             value: false

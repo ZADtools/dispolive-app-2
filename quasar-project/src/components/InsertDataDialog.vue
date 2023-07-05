@@ -5,8 +5,8 @@
         @update:model-value="closeDialog"
         persistent
         :maximized="true"
-        transition-show="jump-right"
-        transition-hide="jump-right"
+        transition-show="jump-down"
+        transition-hide="jump-down"
     >
 
         <q-card class="bg-grey-3">
@@ -16,13 +16,13 @@
                 </q-form>
                 <q-card-actions class="row q-px-xs q-py-sm" :class="[Dark.isActive ? 'bg-grey-10' : 'bg-grey-3']">
                     <div class="col-12 q-px-sm q-mb-sm" v-if="device.operatingSystem == 'ios' && actItem?.type !== 'Serie' && actItem?.type !== 'Linie'">
-                        <q-btn color="amber-7 text-white" class="full-width text-body1" padding="6px" icon="fas fa-id-card" label="EGK einlesen" @click="readEGK" />
+                        <q-btn unelevated color="amber-7 text-white" class="full-width text-body1" padding="6px" icon="fas fa-id-card" label="EGK einlesen" @click="readEGK" />
                     </div>
                     <div class="col-6 q-px-sm">
-                        <q-btn class="full-width text-body1" padding="6px" color="negative" @click="closeDialog" label="Abbrechen" />
+                        <q-btn unelevated class="full-width text-body1" padding="6px" color="negative" @click="closeDialog" label="Abbrechen" />
                     </div>
                     <div class="col-6 q-px-sm">
-                        <q-btn class="full-width text-body1" padding="6px" @click="save()" color="primary" label="Speichern" />
+                        <q-btn unelevated class="full-width text-body1" padding="6px" @click="save()" color="primary" label="Speichern" />
                     </div>
                 </q-card-actions>
             </q-list>
@@ -78,7 +78,11 @@ item        = ref({
     rawInsuranceData:               data.value.rawInsuranceData || '',
     rawPersonalData:                data.value.rawPersonalData || '',
     sonderleistungen:               data.value.sonderleistungen || '',
-    einsatzNummer:                  data.value.einsatzNummer || '' 
+    einsatzNummer:                  data.value.einsatzNummer || '',
+    genNr:                          data.value.genNr || '',
+    verordnungsId:                  data.value.verordnungsId || '',
+    transportart:                   data.value.transportart || '',
+    serienKategorie:                data.value.serienKategorie || '',
 });
 const auditStore = useAuditStore();
 const fahrberichtStore = useFahrberichtStore();
@@ -141,6 +145,7 @@ async function stopReadCard() {
 watch( cardResponse, async ( newVal ) => {
     if ( Object.keys(newVal).length > 0 ) {
         editData.value = await cardreaderStore.setCardData( editData.value )
+        console.log('111', editData.value)
         id.value = uid();
     }
 } )

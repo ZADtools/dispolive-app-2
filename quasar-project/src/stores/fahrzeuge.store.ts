@@ -86,9 +86,11 @@ export const useFahrzeugeStore = defineStore('fahrzeugeStore', {
             }
         },
 
-        async setItem( item: ICar ) {
+        async setItem( item: ICar | null ) {
             log( 'setItem', item );
-            LocalStorage.set('selectedCar', JSON.stringify(item));
+            if (item)
+                LocalStorage.set('selectedCar', JSON.stringify(item));
+                
             this._item = item;
         }
     },

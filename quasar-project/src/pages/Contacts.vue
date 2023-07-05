@@ -14,9 +14,9 @@
             :selectedItem="selectedItem"
             v-model="contact"
             persistent
-            transition-show="jump-right"
-            transition-hide="jump-right">
-            <q-card style="width: 700px;">
+            transition-show="jump-down"
+            transition-hide="jump-down">
+            <q-card style="width: 700px;" class="shadow-0">
                 <q-bar class="q-pa-lg text-h6 text-white bg-primary">
                     Kontakt
                 </q-bar>
@@ -36,10 +36,10 @@
                 <q-separator />
                 <q-card-actions class="row q-px-lg q-py-sm" :class="[Dark.isActive ? 'bg-grey-10' : 'bg-grey-3']">
                     <div class="col-6 q-px-sm">
-                        <q-btn class="full-width text-body1" padding="6px" color="negative" v-close-popup label="Zurück" />
+                        <q-btn unelevated class="full-width text-body1" padding="6px" color="negative" v-close-popup label="Zurück" />
                     </div>
                     <div class="col-6 q-px-sm">
-                        <q-btn class="full-width text-body1" padding="6px" @click="startNavigation()" color="amber-7" label="Navigation starten" />
+                        <q-btn unelevated class="full-width text-body1" padding="6px" @click="startNavigation()" color="amber-7" label="Navigation starten" />
                     </div>
                 </q-card-actions>
             </q-card>
@@ -66,8 +66,9 @@ const   contact = ref(false),
         patData = ref({});
 
 onMounted( async () => {
-    accountStore.setSecondHeader('contacts');
+    accountStore.setSecondHeader('contacts')
     accountStore.setTitle('Kontakte')
+    patientenStore._search = ''
 })
 
 patData.value = computed(function() {
@@ -97,7 +98,3 @@ function startNavigation ()  {
     accountStore.startNavigation( { type: 'patient', datId: selectedItem.value } )
 }
 </script>
-
-<style lang="scss">
-
-</style>

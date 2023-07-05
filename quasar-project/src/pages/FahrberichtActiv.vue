@@ -4,7 +4,7 @@
             <fahrbericht-view :showStatusButtons="true" @insertDataDialog="insertDataDialog = true" :insertDataDialog="insertDataDialog" @close="insertDataDialog = false" />
             <div class="row q-px-sm q-pt-sm q-card__actions" v-if="fbItem?.type !== 'Linie'" :class="[Dark.isActive ? 'bg-grey-10' : 'bg-grey-3']">
                 <div class="col-12 q-pb-sm" v-if="settings.ipadEventEdit !== 0">
-                    <q-btn align="center" class="full-width text-body1" padding="6px" @click="insertData()" color="primary" label="Daten ergänzen" />
+                    <q-btn unelevated align="center" class="full-width text-body1" padding="6px" @click="insertData()" color="primary" label="Daten ergänzen" />
                 </div>
             </div>
         </q-card>

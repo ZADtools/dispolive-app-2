@@ -21,6 +21,7 @@ import { version }                                  from '../../package.json';
 import { useFahrzeugeStore }                        from './fahrzeuge.store';
 import { useMenuStore }                             from './menu.store';
 import {registerPlugin}                             from '@capacitor/core';
+import { platform } from 'os';
 const BackgroundGeolocation = registerPlugin<BackgroundGeolocationPlugin>('BackgroundGeolocation');
 
 const log                                           = debug('app:account.module');
@@ -120,12 +121,13 @@ export interface IAccountState {
     _loadingDefault:     ILoadingDefault;
     _logoutDialog:       boolean;
     _BackgroundGeolocationId: string;
+    _timer:              string | null;
 }
 
 export const useAccountStore = defineStore('accountStore', {
     state: (): IAccountState => ({
         _geolocationWatchId: '',
-        _device:             {},
+        _device:             {platform: 'ios'},
         _appCarNote:         {},
         _version:            null,
         _packVersion:        version,
@@ -165,13 +167,14 @@ export const useAccountStore = defineStore('accountStore', {
         _progressBarLoad:    false,
         _loadingDefault:     {
             spinner: QSpinnerOval,
-            spinnerColor: 'secondary',
+            spinnerColor: 'teal-8',
             spinnerSize: 100,
             backgroundColor: 'grey-9',
             messageColor: 'white'
         },
         _logoutDialog:       false,
-        _BackgroundGeolocationId: ''
+        _BackgroundGeolocationId: '',
+        _timer:              null
     }),
     getters: {
         device:             state => state._device,
@@ -276,10 +279,10 @@ export const useAccountStore = defineStore('accountStore', {
             }
         },
         async setStatusbarColor( status: boolean ) {
-            if ( status ) {
-                await StatusBar.setStyle({ style: Style.Dark });
-            } else
+            if ( !status && this._device.platform === 'ios' ) {
                 await StatusBar.setStyle({ style: Style.Light });
+            } else
+                await StatusBar.setStyle({ style: Style.Dark });
         },
         setDarkMode( status: boolean ) {
             Dark.toggle();
@@ -428,7 +431,6 @@ export const useAccountStore = defineStore('accountStore', {
                 this._appCarNote = data
         },
         msgRead( data: any ) {
-            log('test')
             const socketStore = useSocketStore();
             const { io } = storeToRefs(socketStore);
             io.value.emit( 'msgRead', data )
@@ -438,12 +440,12 @@ export const useAccountStore = defineStore('accountStore', {
             const stat = await Network.getStatus();
             this._connected = stat.connected;
 
-            Network.addListener('networkStatusChange', (status: any) => {
+            Network.addListener('networkStatusChange', async (status: any) => {
                 log('networkStatusChange', status)
                 this._connected = status.connected;
 
                 if (status.connected)
-                    auditStore.sendData();
+                    await auditStore.sendData();
             });
         },
         async compareVersion( ) {
@@ -456,6 +458,7 @@ export const useAccountStore = defineStore('accountStore', {
             if (response.error)
                 this._errorVersion = true
             else
+                //TODO
                 this._actVersion = response
 
             this._checkVersion = false
@@ -476,7 +479,10 @@ export const useAccountStore = defineStore('accountStore', {
                     }
                 }
             }
-            menuStore.setProgress(item)
+
+            if ( item.status !== 'sonderrechte' )
+                menuStore.setProgress(item)
+
             fahrberichteStore.updateItem(item)
             navStore.updateNavPoint(item)
         },
@@ -518,7 +524,7 @@ export const useAccountStore = defineStore('accountStore', {
             this._title                 = 'dispolive'
             this._navigationItems       = []
             this._timer                 = null
-            this._secondHeader          = {}
+            this._secondHeader          = ''
             this._geoPos                = { 
                 car: '',
                 timestamp: 0,
@@ -540,8 +546,8 @@ export const useAccountStore = defineStore('accountStore', {
         },
         async logout() {
             const navStore = useNavStore();
-            const { data } = storeToRefs(navStore);
-            const   trips = data.value
+            navStore._data = [];
+
             this._logoutDialog = false
 
             Network.removeAllListeners();
@@ -572,7 +578,7 @@ export const useAccountStore = defineStore('accountStore', {
             messengerStore.remove();
 
             BackgroundGeolocation.removeWatcher({id: this._BackgroundGeolocationId});  
-            await accountService.logout( { sessionID: this._sessionId } );
+            accountService.logout( { sessionID: this._sessionId } );
             const socketStore = useSocketStore();
             socketStore.remove();
             this.loginFailure();

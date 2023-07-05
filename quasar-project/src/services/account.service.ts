@@ -4,8 +4,8 @@ import debug                        from 'debug';
 import { useSocketStore }           from 'src/stores/socket.store';
 import { useFahrzeugeStore }        from 'src/stores/fahrzeuge.store';
 import { useAccountStore }          from 'src/stores/account.store';
-import { storeToRefs } from 'pinia';
-const log         = debug('app:account.service');
+import { storeToRefs }              from 'pinia';
+const log                           = debug('app:account.service');
 
 export interface IRequest {
     withCredentials:        boolean;
@@ -17,18 +17,6 @@ const request: IRequest       = {
 
 let domain: string,
     session: string;
-
-export const accountService = {
-    setDomain,
-    login,
-    logout,
-    getData,
-    getCustomData,
-    transferItem,
-    transferFile,
-    getDataSocket,
-    printEinsatzprotokoll
-};
 
 async function setDomain( dom: string ) {
     domain      = `https://${dom}.dispolive.de`;
@@ -72,17 +60,22 @@ async function login( data: any ) {
 
 function printEinsatzprotokoll( { params }: any ) {
     return new Promise((resolve, reject) => {
-        const socketStore = useSocketStore()
-        const { io } = storeToRefs(socketStore)
+        try {
+            const socketStore = useSocketStore()
+            const { io } = storeToRefs(socketStore)
 
-        const accountStore = useAccountStore();
-        const { sessionId: sessionID } = storeToRefs(accountStore);
+            const accountStore = useAccountStore();
+            const { sessionId: sessionID } = storeToRefs(accountStore);
 
-        io.value.emit('printEinsatzprotokoll', { sessionID: sessionID.value, params }, (err: any) => {
-            if (!err || !err.error ) {
-                resolve(err)
-            }
-        });
+            io.value.emit('printEinsatzprotokoll', { sessionID: sessionID.value, params }, (err: any) => {
+                if (!err || !err.error ) {
+                    resolve(err)
+                } else
+                    reject(err.error)
+            });
+        } catch (err) {
+            reject(err)
+        }
     })
 }
 
@@ -366,3 +359,15 @@ function getDataSocket( { event, param }: { event: string, param?: any }) {
         });
     })
 }
+
+export const accountService = {
+    setDomain,
+    login,
+    logout,
+    getData,
+    getCustomData,
+    transferItem,
+    transferFile,
+    getDataSocket,
+    printEinsatzprotokoll
+};

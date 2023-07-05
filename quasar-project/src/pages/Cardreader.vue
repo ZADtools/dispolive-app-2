@@ -9,7 +9,7 @@
                 </ul>
             </div>
             <div>
-                <q-btn color="primary" class="q-ml-lg text-body1" padding="6px" label="Zur Anleitung" @click="showSetup" />
+                <q-btn unelevated color="primary" class="q-ml-lg text-body1" padding="6px" label="Zur Anleitung" @click="showSetup" />
             </div>
             <div class="raw-data" :class="[Dark.isActive ? 'bg-grey-10' : 'bg-grey-3']">
                 <div class="text-body1 text-bold q-pb-sm">Patient</div>
@@ -56,7 +56,7 @@ import { storeToRefs } from 'pinia';
 
 const log = debug('app:cardreader');
 const patientCard = ref({});
-const development = ref(process.env.DEV);
+const development = ref(process.env.DEV || false);
 
 const accountStore = useAccountStore();
 const { darkMode } = storeToRefs(accountStore);

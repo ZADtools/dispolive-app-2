@@ -88,7 +88,7 @@ export const useMessengerStore = defineStore('messengerStore', {
         setMessages( messages : IMessage[] ) {
             if ( !this._messages )
                 this._messages = []
-
+            
             messages.forEach((message: any, index: number) => {
                 this._messages.unshift(message);
             })
@@ -99,12 +99,6 @@ export const useMessengerStore = defineStore('messengerStore', {
         setMessage( message: IMessage ) {
             this._messages?.push(message);
             this._lastItem = message._id || '';
-
-            const accountStore = useAccountStore();
-            const { secondHeader } = storeToRefs(accountStore);
-
-            if (secondHeader.value !== 'messages')
-                this._unread = this._unread + 1
         },
         setSend( data: IMessage ) {
             this._messages.forEach(( item: any ) => {
@@ -177,6 +171,9 @@ export const useMessengerStore = defineStore('messengerStore', {
             const fahrzeugeStore = useFahrzeugeStore();
             const { item } = storeToRefs(fahrzeugeStore);
 
+            if (!item.value?._id)
+                return 
+
             const accountStore = useAccountStore();
             const { secondHeader, device, appInForeground } = storeToRefs(accountStore);
 
@@ -216,9 +213,9 @@ export const useMessengerStore = defineStore('messengerStore', {
                         } )
                         if ( messages && messages.data && messages.data.length > 0 )
                             audioStore.play( 'neueNachricht' );
-                        
+
                         if (secondHeader.value !== 'messages' && messages.data)
-                        this.setUnread( this._unread + messages.data.length )
+                            this.setUnread( this._unread + messages.data.length )
 
                         //dispatch('setReceive', messages)
                         return messages

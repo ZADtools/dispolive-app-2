@@ -13,7 +13,7 @@
         <div class="row" v-show="secondHeader === 'missingdata'">
             <div class="col-12">
                 <q-toolbar class="q-py-md">
-                    <q-btn class="col-4 text-body1 full-width" padding="6px" align="center" color="negative" @click="missingDataDialog = true" label="Alle Daten löschen" />
+                    <q-btn unelevated class="col-4 text-body1 full-width" padding="6px" align="center" color="negative" @click="missingDataDialog = true" label="Alle Daten löschen" />
                 </q-toolbar>
             </div>
             <Dialog type="delete" text="Möchten Sie die ungesendeten Daten wirklich löschen?" :modelValue="missingDataDialog" @update:modelValue="(val) => missingDataDialog = val" :func="deleteMissingData"   />
@@ -21,7 +21,7 @@
         <!-- fahrberichteheader -->
         <div class="row q-pa-sm" v-show="secondHeader === 'Fahrberichte'">
             <div class="col-4 q-pr-xs">
-                <q-btn align="center" class="full-width col-6 text-body1" padding="6px" :color="btnColorToday" @click="changeDay('today')" >
+                <q-btn unelevated align="center" class="full-width col-6 text-body1" padding="6px" :color="btnColorToday" @click="changeDay('today')" >
                 <div class="ellipsis">
                         {{ setNextDayLabel('today') }}
                     </div>
@@ -31,7 +31,7 @@
                 {{actDay}}
             </div>
             <div class="col-4 q-pl-xs">  
-                <q-btn align="center" class="full-width col-6 ellipsis text-body1" padding="6px" :color="btnColorNext" @click="changeDay('next')" >
+                <q-btn unelevated align="center" class="full-width col-6 ellipsis text-body1" padding="6px" :color="btnColorNext" @click="changeDay('next')" >
                 <div class="ellipsis">
                         {{ setNextDayLabel('next')}}
                     </div>
@@ -48,14 +48,14 @@
         <!-- messagessecondheader -->
         <div class="row q-pa-sm" style="min-height: 65px" v-show="secondHeader=='messages'">
             <div class="col-6 q-pr-xs">
-                <q-btn class="full-width ellipsis text-body1" padding="6px" color="negative" @click="messengerStore.setSelectedText({ type: 'messenger', text: 'Besatzung bittet um Rückruf!' })" >
+                <q-btn unelevated class="full-width ellipsis text-body1" padding="6px" color="negative" @click="messengerStore.setSelectedText({ type: 'messenger', text: 'Besatzung bittet um Rückruf!' })" >
                     <div class="ellipsis">
                         Rückruf anfordern
                     </div>
                 </q-btn>
             </div>
             <div class="col-6 q-pl-xs">
-                <q-btn class="full-width ellipsis text-body1" padding="6px" color="primary" @click="messengerStore._showTextSnippets = true" >
+                <q-btn unelevated class="full-width ellipsis text-body1" padding="6px" color="primary" @click="messengerStore._showTextSnippets = true" >
                 <div class="ellipsis">
                         Textbausteine
                     </div>
@@ -71,14 +71,14 @@
         <!-- dienstplansecondheader -->
         <div class="row q-pa-sm" v-if="secondHeader == 'dienstplan'">
             <div class="col-6 q-pr-xs">
-                <q-btn class="full-width ellipsis text-body1" padding="6px" :color="pers == 'fahrer' ? 'negative' : 'primary'" @click="loadDienstplan('fahrer')" >
+                <q-btn unelevated class="full-width ellipsis text-body1" padding="6px" :color="pers == 'fahrer' ? 'negative' : 'primary'" @click="loadDienstplan('fahrer')" >
                 <div class="ellipsis">
                         {{getKrz('fahrer')}}
                     </div>
                 </q-btn>
             </div>
             <div class="col-6 q-pl-xs">
-                <q-btn class="full-width ellipsis text-body1" padding="6px" :color="pers == 'beifahrer' ? 'negative' : 'primary'" @click="loadDienstplan('beifahrer')" >
+                <q-btn unelevated class="full-width ellipsis text-body1" padding="6px" :color="pers == 'beifahrer' ? 'negative' : 'primary'" @click="loadDienstplan('beifahrer')" >
                 <div class="ellipsis">
                         {{getKrz('beifahrer')}}
                     </div>
@@ -93,7 +93,7 @@
         </div>
         <!-- kontaktsecondheader -->
         <q-toolbar v-show="secondHeader == 'contacts'">
-            <div class="col-12 q-py-sm">
+            <div class="col-12 q-pt-xs">
                 <q-input filled :modelValue="search" @update:model-value="($event) => searchContacts($event)" clearable label-color="primary" label="Suche" :class="[Dark.isActive ? 'bg-grey-10' : 'bg-grey-3']" >
                     <template v-slot:prepend>
                         <q-icon color="primary" name="place" />
@@ -104,17 +104,17 @@
         <!-- cardreadersubheader -->
         <q-toolbar v-show="secondHeader === 'cardreader'">
             <div class="col-12" v-if="isScanning">
-                <q-btn color="negative" class="text-body1" padding="6px" @click="cardreaderStore.stopBarcodeScanning()" label="Abbrechen" />
+                <q-btn unelevated color="negative" class="text-body1" padding="6px" @click="cardreaderStore.stopBarcodeScanning()" label="Abbrechen" />
             </div>
             <div class="col-6 q-pr-xs" v-if="!isScanning">
-                <q-btn class="full-width ellipsis text-body1" padding="6px" color="primary" @click="cardreaderStore.startPairing">
+                <q-btn unelevated class="full-width ellipsis text-body1" padding="6px" color="primary" @click="cardreaderStore.startPairing">
                     <div class="ellipsis">
                         Gerät Koppeln
                     </div>
                 </q-btn>
             </div>
             <div class="col-6 q-pl-xs" v-if="!isScanning">
-                <q-btn class="full-width ellipsis text-body1" padding="6px"  color="primary" @click="cardreaderStore.readCard">
+                <q-btn unelevated class="full-width ellipsis text-body1" padding="6px"  color="primary" @click="cardreaderStore.readCard">
                     <div class="ellipsis">
                         EGK lesen
                     </div>
@@ -136,7 +136,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onBeforeMount }                      from 'vue'
+import { ref, onBeforeMount, watch }                      from 'vue'
 import { useAccountStore }          from 'src/stores/account.store';
 import { useDesiprotokolleStore }   from 'src/stores/desiprotokolle.store';
 import { useFahrberichteStore }     from 'src/stores/fahrberichte.store';
@@ -184,6 +184,7 @@ const missingDataDialog       = ref(false)
 onBeforeMount(() => {
     fahrberichteStore._selectedDay = day
     fahrberichteStore.loadDay()
+    search.value = ''
 })
 
 function setStartTimer() {
@@ -214,6 +215,12 @@ function changeDay ( item: string ) {
     fahrberichteStore._selectedDay = item;
 }
 
+watch( title, (val) => {
+    if ( val === 'Kontakte' ) {
+        search.value = '';
+    }
+})
+
 function getKrz(pers: any) {
     let person = null;
     if ( pers === 'fahrer' )
@@ -243,6 +250,7 @@ async function loadDienstplan( pers: string ) {
 }
 
 function searchContacts (val: string) {
+    search.value = val
     patientenStore._search = val
 }
 

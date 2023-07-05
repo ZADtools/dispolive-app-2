@@ -4,10 +4,10 @@ import { useRouter }                                        from 'vue-router';
 import { useFahrberichtStore }                              from 'src/stores/fahrbericht.store';
 import dayjs                                                from 'dayjs';
 import debug                                                from 'debug';
-import { storeToRefs, defineStore, getActivePinia }                         from 'pinia';
+import { storeToRefs, getActivePinia }                      from 'pinia';
 const log                                                   = debug('app:Global');
 
-export default function Global() {
+export const Global = () => {
     const settingsStore = useSettingsStore();
     const { item: settingsData } = storeToRefs(settingsStore);
 

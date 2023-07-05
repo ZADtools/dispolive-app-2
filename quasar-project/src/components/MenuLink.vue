@@ -7,17 +7,25 @@
 
             <q-item-section>
                 <q-item-label 
-                    class="menu-item-label ellipsis text-body1" 
+                    class="menu-item-label 
+                    ellipsis text-body1" 
                     :class="setLabelTextColor(item)" 
                     style="z-index:1"
                 >
-                    {{ item.title }} 
+                    
+                    <span class="text-grey-7" v-if="item.title === 'Angenommene Fahrten' && navItems.length === 0">{{item.title}}</span>
+                    <span v-else>{{ item.title }}&nbsp;</span>
                     <span class="text-bold" v-if="item.title === 'Pausieren' && pauseTime">{{ `(${pauseTime})` }}</span> 
                     <span class="text-bold" v-if="item.title === 'Desinfektion' && diffTime">{{ `(${diffTime})` }}</span> 
+                    
                     <q-badge v-if="item.title == 'Messenger' && unread" align="top" color="negative">{{unread}}</q-badge>
                 </q-item-label>
-                <q-linear-progress style="margin-left: 0px; margin-top: -10px; position:absolute; z-index: 0; width: 233px" size="70px" v-if="item.menuType == 'sub'" :color="setProgressColor(item.item)" :value="progress[item.item._id]" />
-                
+                <q-linear-progress 
+                    style="margin-left: 0px; margin-top: -10px; position:absolute; z-index: 0; width: 233px" 
+                    size="70px" v-if="item.menuType == 'sub'" 
+                    :color="setProgressColor(item.item)" 
+                    :value="progress[item.item._id]"
+                />
             </q-item-section>
             
         </q-item>
@@ -29,8 +37,8 @@
         <q-dialog
             v-model="confirmSpecialRights"
             persistent
-            transition-show="jump-right"
-            transition-hide="jump-right">
+            transition-show="jump-down"
+            transition-hide="jump-down">
             <q-card style="width: 700px;">
                 <q-bar class="q-pa-lg text-h6 text-white bg-primary">
                     Sonderrechte
@@ -42,12 +50,12 @@
                         </div>
                     </div>
                     <q-separator />
-                    <q-card-actions class="row q-px-lg q-py-sm bg-grey-3">
+                    <q-card-actions class="row q-px-lg q-py-sm" :class="[Dark.isActive ? 'bg-grey-10' : 'bg-grey-3']">
                         <div class="col-6 q-px-sm">
-                            <q-btn class="full-width text-body1" padding="6px" color="negative" v-close-popup label="Abbrechen" />
+                            <q-btn unelevated class="full-width text-body1" padding="6px" color="negative" v-close-popup label="Abbrechen" />
                         </div>
                         <div class="col-6 q-px-sm">
-                            <q-btn class="full-width text-body1" padding="6px" color="primary" @click="setSpecialRights()" label="Einschalten" />
+                            <q-btn unelevated class="full-width text-body1" padding="6px" color="primary" @click="setSpecialRights()" label="Einschalten" />
                         </div>
                     </q-card-actions>
                 </q-form>
@@ -161,7 +169,7 @@ function setSpecialRights () {
                 await auditStore.setItem({ type:'zeitstempel', value: data })
                 await auditStore.setItem({ type:'sonderNotice', value: sonderBemerkung, noAlert: true })
                 await menuStore.setStatus({status: 'sonderrechte'})
-                menuStore.setSonderrechteApp()
+                //menuStore.setSonderrechteApp()
             }
         }
     } )

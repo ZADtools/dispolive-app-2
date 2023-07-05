@@ -66,7 +66,7 @@
 </template>
 
 <script lang="ts" setup>
-import Global                                               from '../helpers/Global'
+import {Global}                                               from '../helpers/Global'
 import debug                                                from 'debug';
 
 const log                                                   = debug('app:regulation');

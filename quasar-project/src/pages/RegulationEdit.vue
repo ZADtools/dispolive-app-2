@@ -9,9 +9,9 @@
                 <q-select 
                     filled 
                     label-color="negative" 
-                    transition-show="flip-up" 
+                    transition-show="jump-down" 
                     v-model="editItem.eigenanteil"
-                    transition-hide="flip-down" 
+                    transition-hide="jump-down" 
                     :options="optionsGebuehr" 
                     label="Gebühr" 
                     stack-label
@@ -36,16 +36,16 @@
                 <q-select 
                     filled 
                     label-color="negative" 
-                    transition-show="flip-up" 
+                    transition-show="jump-down" 
                     v-model="editItem.transVorhanden" 
-                    transition-hide="flip-down" 
+                    transition-hide="jump-down" 
                     :options="['Ja', 'Nein']" 
                     label="Transportschein vorhanden" 
                     stack-label
                 />
             </div>
             <div class="col-12 col-md-6 q-pa-sm">
-                <q-select filled  transition-show="jump-bottom" transition-hide="jump-bottom" label-color="negative" 
+                <q-select filled  transition-show="jump-down" transition-hide="jump-down" label-color="negative" 
                     :model-value="editItem.krankenkasse"
                     @update:model-value="setInsertData($event, 'krankenkasse')"
                     :options="options" 
@@ -114,7 +114,7 @@
                 >
                     <template v-slot:append>
                         <q-icon name="event" class="cursor-pointer">
-                        <q-popup-proxy ref="birthdayProxy" transition-show="flip-up" transition-hide="flip-down">
+                        <q-popup-proxy ref="birthdayProxy" transition-show="jump-down" transition-hide="jump-down">
                             <q-date v-model="editItem.birthday" today-btn mask="YYYY-MM-DD">
                                 <div class="row items-center justify-end">
                                     <q-btn v-close-popup label="Schliessen" color="negative" flat />
@@ -144,8 +144,8 @@
                     label-color="negative" 
                     v-model="editItem.versStatus"
                     :options="[ '1', '3', '5' ]" 
-                    transition-show="flip-up" 
-                    transition-hide="flip-down" 
+                    transition-show="jump-down"
+                    transition-hide="jump-down" 
                     label="Status" 
                     stack-label  
                 />
@@ -175,7 +175,7 @@
                 >
                     <template v-slot:append>
                         <q-icon name="event" class="cursor-pointer">
-                        <q-popup-proxy ref="dateProxy" transition-show="flip-up" transition-hide="flip-down">
+                        <q-popup-proxy ref="dateProxy" transition-show="jump-down" transition-hide="jump-down">
                             <q-date v-model="editItem.verordnungAusstellungsDatum" ref="date" today-btn mask="YYYY-MM-DD">
                                 <div class="row items-center justify-end">
                                     <q-btn v-close-popup label="Schliessen" color="negative" flat />
@@ -193,9 +193,9 @@
                     filled 
                     class="q-pa-sm bg-white white"
                     label-color="primary" 
-                    transition-show="flip-up" 
+                    transition-show="jump-down" 
                     v-model="editItem.sonderleistungen"
-                    transition-hide="flip-down" 
+                    transition-hide="jump-down" 
                     :options="sonderleistungen" 
                     label="Sonderleistungen" 
                     stack-label
@@ -204,6 +204,70 @@
                     option-value="name"
                     option-label="name"
                     multiple
+                >
+                </q-select>
+            </div>
+        </div>
+        <div class="row q-pa-sm bg-white">
+            <div class="col-12" :class="[Screen.gt.sm ? 'q-pr-sm' : '']">
+                <q-input type="textarea" autogrow class="bg-white white" filled label-color="primary" v-model="editItem.genNr"  label="Genehmigungs Nr." stack-label />
+            </div>
+        </div>
+        <div class="row q-py-sm q-col-gutter-sm">
+            <div class="col-12 col-md-4">
+                <q-select 
+                    filled 
+                    class="q-pa-sm bg-white white"
+                    label-color="primary" 
+                    transition-show="jump-down" 
+                    :model-value="editItem.verordnungsId"
+                    @update:model-value="setValues('verordnungsart', $event)"
+                    transition-hide="jump-down" 
+                    :options="verordnungen" 
+                    label="Verordnungsart" 
+                    stack-label
+                    map-options
+                    option-value="_id"
+                    option-label="name"
+                    :hide-bottom-space="true"
+                >
+                </q-select>
+            </div>
+            <div class="col-12 col-md-4">
+                <q-select 
+                    filled 
+                    class="q-pa-sm bg-white white"
+                    label-color="primary" 
+                    transition-show="jump-down" 
+                    :model-value="editItem.transportart"
+                    @update:model-value="setValues('transportart', $event)"
+                    transition-hide="jump-down" 
+                    :options="transportarten" 
+                    label="Transportart" 
+                    stack-label
+                    map-options
+                    option-value="_id"
+                    option-label="transportart"
+                    :hide-bottom-space="true"
+                >
+                </q-select>
+            </div>
+            <div class="col-12 col-md-4">
+                <q-select 
+                    filled 
+                    class="q-pa-sm bg-white white"
+                    label-color="primary" 
+                    transition-show="jump-down" 
+                    :model-value="editItem.serienKategorie"
+                    @update:model-value="setValues('kategorie', $event)"
+                    transition-hide="jump-down" 
+                    :options="kategorien" 
+                    label="Kategorien" 
+                    stack-label
+                    map-options
+                    option-value="_id"
+                    option-label="name"
+                    :hide-bottom-space="true"
                 >
                 </q-select>
             </div>
@@ -247,13 +311,16 @@
 import { ref, watch }                                              from 'vue';
 import dayjs                                                from 'dayjs';
 import { uid, extend, Screen }                              from 'quasar';
-import Global                                               from '../helpers/Global';
+import {Global}                                               from '../helpers/Global';
 import TextSnippets                                         from 'src/components/TextSnippets.vue';
 import { useAccountStore }                                  from 'src/stores/account.store';
 import { useAuditStore }                                    from 'src/stores/audit.store';
 import { useKostentraegerStore }                            from 'src/stores/kostentraeger.store';
 import { useMessengerStore }                                from 'src/stores/messenger.store';
 import { useSonderleistungenStore }                         from 'src/stores/sonderleistungen.store';
+import { useTransportartStore }                             from 'src/stores/transportart.store';
+import { useVerordnungsartStore }                           from 'src/stores/verordnungsart.store';
+import { useKategorienStore }                               from 'src/stores/kategorien.store';
 import { storeToRefs } from 'pinia';
 
 const props = defineProps({
@@ -268,7 +335,7 @@ const emit = defineEmits([
 const global        = Global();
 const options       = ref([]),
     label           = ref('Dateiupload'),
-    editItem        = ref( extend( true, {}, props.modelValue) ),
+    editItem        = ref<any>( extend( true, {}, props.modelValue) ),
     uploader        = ref(),
     optionsGebuehr  = ref([
         {
@@ -304,6 +371,15 @@ const { data: kassen }       = storeToRefs(kostentraegerStore);
 
 const sonderleistungenStore = useSonderleistungenStore();
 const { data: sonderleistungen } = storeToRefs(sonderleistungenStore);
+
+const transportartStore     = useTransportartStore();
+const { data: transportarten } = storeToRefs(transportartStore);
+
+const verordnungsartStore       = useVerordnungsartStore();
+const { data: verordnungen } = storeToRefs(verordnungsartStore);
+
+const kategorienStore       = useKategorienStore();
+const { data: kategorien } = storeToRefs(kategorienStore);
 
 options.value = extend(true, [], kassen.value)
 
@@ -344,6 +420,23 @@ function openTextSnippets( messageType: string ) {
     messengerStore._showTextSnippets = true
 }
 
+function setValues (type, event: any) {
+    switch (type) {
+        case 'verordnungsart':
+            editItem.value.verordnungsId = event._id
+            editItem.value.verordnungsName = event.name
+            break;
+        case 'transportart':
+            editItem.value.transportart = event._id
+            editItem.value.transportName = event.transportart
+            break;
+        case 'kategorie':
+            editItem.value.serienKategorie = event._id
+            editItem.value.serienKategorName = event.name
+            break;
+    }
+}
+
 async function factoryFn ( file: any ) {
         const formdata = new FormData();
         for (const item of fields) {
@@ -354,7 +447,6 @@ async function factoryFn ( file: any ) {
 
         formdata.append( '_id', id);
         formdata.append( 'file', file[0]);
-        console.log(formdata)
         await auditStore.sendFile(formdata);
         file[0].__progress = 100
         file[0].__progressLabel = '100.00%'

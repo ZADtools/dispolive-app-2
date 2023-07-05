@@ -6,7 +6,7 @@
                     Fahrzeug wählen
                 </div>
                 <div class="col-6 flex justify-end">
-                    <q-btn color="secondary" @click="fahrzeugeStore.getData()" size="sm" icon="fas fa-redo" />
+                    <q-btn unelevated color="secondary" @click="fahrzeugeStore.getData()" size="sm" icon="fas fa-redo" />
                 </div>
             </div>
             <div v-show="!loadData" class="col-12 text-primary">
@@ -47,7 +47,13 @@
                 :func="confirmSelectedCar"
             />
 
-            <q-dialog v-if="showGPSDialog" v-model="showGPSDialog" persistent>
+            <q-dialog 
+                v-if="showGPSDialog" 
+                v-model="showGPSDialog" 
+                persistent
+                transition-show="jump-down"
+                transition-hide="jump-down"
+            >
                 <q-card class="shadow-0">
                     <q-bar class="q-pa-lg text-h6 text-white bg-negative" >
                         Ortungsdienste
@@ -56,16 +62,17 @@
                     <q-card-section class="text-left">
                         <div class="text-body1 row">
                             <div class="col-12">
-                                'dispolive' erfasst Standortdaten, um:
+                                'dispolive' erfasst Standortdaten, um
                             </div>
                             <div class="col-12 q-mt-sm">
-                                - den Standort des Gerätes zu verfolgen und an die Leitstelle zu senden, auch wenn die App geschlossen ist oder wenn die App nicht verwendet wird.
+                                - den Standort des Gerätes zu verfolgen und an die Leitstelle zu senden, auch wenn die App geschlossen ist <br/>
+                                - oder wenn die App nicht verwendet wird.
                             </div>
                             <div class="col-12 q-mt-sm">
                                 Informationen über die Verwendung von Standortdaten finden Sie in unseren Datenschutzrichtlinien.
                             </div>
                             <div class="col-12 text-center q-my-md">
-                                <q-btn color="primary" size="16px" clickable @click="datenschutz = !datenschutz" no-caps class="q-mt-xs" label="Zu den Datenschutzrichtlinien"/>
+                                <q-btn unelevated color="primary" size="16px" clickable @click="datenschutz = !datenschutz" no-caps class="q-mt-xs" label="Zu den Datenschutzrichtlinien"/>
                             </div>
                             <div class="col-12 text-grey5 text-center text-caption">
                                 Ohne Ihr Einverständnis können Sie die App nicht im vollen Funktionsumfang nutzen!
@@ -73,9 +80,9 @@
                         </div>
                     </q-card-section>
                     <q-separator />
-                    <q-card-actions align="center" class="row" >
-                        <q-btn class="col-5 text-body1" label="Ablehnen" color="negative" v-close-popup />
-                        <q-btn class="col-5 text-body1" label="Aktzeptieren" color="primary" @click="setSelectedCar"  v-close-popup />
+                    <q-card-actions align="center" class="row" :class="[Dark.isActive ? 'bg-grey-10' : 'bg-grey-3']">
+                        <q-btn unelevated class="col-5 text-body1" label="Ablehnen" color="negative" v-close-popup />
+                        <q-btn unelevated class="col-5 text-body1" label="Aktzeptieren" color="primary" @click="setSelectedCar"  v-close-popup />
                     </q-card-actions>
                 </q-card>
             </q-dialog>
@@ -83,7 +90,7 @@
         </template>
         <template #footer>
             <div class="col-6 q-px-sm">
-                <q-btn class="full-width text-body1" padding="6px" color="negative" @click="back()" label="Logout" />
+                <q-btn unelevated class="full-width text-body1" padding="6px" color="negative" @click="back()" label="Logout" />
             </div>
         </template>
     </cust-layout>
@@ -125,8 +132,8 @@ const { item: settings }        = storeToRefs(settingsStore);
 const menuStore                 = useMenuStore();
 const socketStore               = useSocketStore();
 
-async function confirmSelectedCar ( car: ICar ) {
-    await fahrzeugeStore.setItem(selectedCar.value?._id ? selectedCar.value : car);
+async function confirmSelectedCar ( car?: ICar ) {
+    await fahrzeugeStore.setItem(car || selectedCar.value);
 
     if ( car && car.status )
         showCarDialog.value = true;

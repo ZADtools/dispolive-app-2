@@ -1,5 +1,5 @@
 <template>
-    <cust-layout view="hHh lpR fFf"  v-if="appDevice && appDevice.platform" :header="false" custClass="q-mx-sm" >
+    <cust-layout view="hHh lpR fFf"  v-if="appDevice && appDevice.platform" :header="false" :login="true" custClass="q-mx-sm" >
         <template #content>
             <q-card class="col-12 offset-0 col-sm-6 offset-sm-3 shadow-0">
                 <q-card-section>
@@ -28,7 +28,7 @@
                             label="Benutzername Beifahrer"
                             :rules="[ val => !!val || 'Beifahrer muss angegeben werden!' ]"
                         />
-                        <q-input name="password" filled v-model="form.password" lazy-rules dense :type="isPwd ? 'password' : 'text'"
+                        <q-input name="password" filled v-model="form.password" lazy-rules dense autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" :type="isPwd ? 'password' : 'text'"
                             label="Passwort"
                             :rules="[ val => !!val || 'Passwort muss angegeben werden!' ]"
                         >
@@ -40,7 +40,7 @@
                                 />
                             </template>
                         </q-input>
-                        <q-btn color="primary" class="full-width q-mt-md text-body1" padding="6px" label="Login" type="submit" />
+                        <q-btn color="primary" unelevated class="full-width q-mt-md text-body1" padding="6px" label="Login" type="submit" />
                         <div class="row">
                             <div class="col-6">
                                 <q-btn color="primary" clickable @click="goToDomain()" flat class="q-mt-md" label="Domain ändern"/>
@@ -89,7 +89,7 @@
 <script setup lang="ts">
 import { ref, onMounted }                                       from 'vue';
 import { useRouter }                                            from 'vue-router';
-import { LocalStorage, Notify, Dark, Loading }                           from 'quasar';
+import { LocalStorage, Notify, Dark }                           from 'quasar';
 import CustLayout                                               from 'src/components/Layout.vue';
 import { version }                                              from '../../package.json';
 import { accountService }                                       from 'src/services/account.service';
@@ -123,7 +123,7 @@ const {
     connected, 
     darkMode,
     errorVersion,
-} = storeToRefs( useAccountStore() )
+} = storeToRefs( accountStore )
 const auditStore    = useAuditStore();
 
 async function doLogin() {
@@ -177,14 +177,15 @@ onMounted( async () => {
             username:     process.env.dev.username,
             password:     process.env.dev.password
         }
+    }
 
-        if ( domain === 'dispo-beta' )
-            form.value       = {
-                fahrer:       process.env.beta.fahrer,
-                username:     process.env.beta.username,
-                password:     process.env.beta.password
-            }
-    } 
+    if ( domain === 'dispo-beta' && process.env.beta && process.env.DEV ) {
+        form.value       = {
+            fahrer:       process.env.beta.fahrer,
+            username:     process.env.beta.username,
+            password:     process.env.beta.password
+        }
+    }
 
     accountStore.startNetworkWatch()
 
@@ -200,9 +201,9 @@ onMounted( async () => {
         goToDomain();
     } else 
         accountService.setDomain( domain )
-    
-    accountStore.initKeyboardListener()
+
     accountStore.compareVersion();
+    accountStore.initKeyboardListener()
 } )
 
 </script>

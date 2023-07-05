@@ -55,7 +55,7 @@
 	<key>NSCameraUsageDescription</key>
 	<string>Code der Schlüsselkarte wird über die Kamera eingelesen!</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string></string>
+	<string>dispolive benötigt den Zugriff auf Ihren Standort.</string>
 	<key>NSLocationAlwaysUsageDescription</key>
 	<string>Location required in background</string>
 	<key>NSLocationWhenInUseUsageDescription</key>

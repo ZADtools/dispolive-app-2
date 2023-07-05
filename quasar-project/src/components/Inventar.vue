@@ -6,7 +6,7 @@
                     <q-item-section class="q-ml-sm col-6 col-md-7">
                         <q-item-label icon="car" class="ellipsis text-bold text-body1 q-pl-sm q-pr-md">{{key}}</q-item-label>
                     </q-item-section>
-                    <q-btn class="q-ml-md ellipsis q-px-sm" size="md" color="brown-5" @click="checkGroup(item)" style="width: 144px"><div class="ellipsis">Gruppe prüfen</div></q-btn>
+                    <q-btn unelevated class="q-ml-md ellipsis q-px-sm" size="md" color="brown-5" @click="checkGroup(item)" style="width: 144px"><div class="ellipsis">Gruppe prüfen</div></q-btn>
                 </q-item>
                 <q-separator />
                 <q-item class="trip-item" v-for="obj in item" :key="obj._id">
@@ -18,8 +18,8 @@
                     </q-item-section>
                     <q-item-section class="q-ml-sm col-6 col-md-5" >
                         <div class="q-ml-sm q-mb-md" >
-                            <q-btn size="md" unelevated @click="event(true, obj)" :color="form.items && form.items[obj._id] && form.items[obj._id].status ? 'teal-5' : 'grey-5'" class="text-white q-mr-md cursor-pointer" icon="fas fa-check"></q-btn>
-                            <q-btn size="md" unelevated @click="event(false, obj)" :color="form.items && form.items[obj._id] && !form.items[obj._id].status ? 'red-7' : 'grey-5'" class="text-white q-ml-md cursor-pointer" icon="fas fa-times"></q-btn>
+                            <q-btn unelevated size="md" @click="event(true, obj)" :color="form.items && form.items[obj._id] && form.items[obj._id].status ? 'teal-5' : 'grey-5'" class="text-white q-mr-md cursor-pointer" icon="fas fa-check"></q-btn>
+                            <q-btn unelevated size="md" @click="event(false, obj)" :color="form.items && form.items[obj._id] && !form.items[obj._id].status ? 'negative' : 'grey-5'" class="text-white q-ml-md cursor-pointer" icon="fas fa-times"></q-btn>
                         </div>
                         <q-item-label 
                             aligne="left"
@@ -43,8 +43,8 @@
         <q-dialog
             v-model="errorDialog"
             persistent
-            transition-show="jump-right"
-            transition-hide="jump-right">
+            transition-show="jump-down"
+            transition-hide="jump-down">
             <q-card style="width: 700px;">
                 <q-bar class="q-pa-lg text-h6 text-white bg-primary">
                     Fehlerbeschreibung
@@ -63,15 +63,14 @@
                             </template>
                         </q-input>
                     </div>
-                    
                 </div>
                 <q-separator />
-                <q-card-actions class="row q-px-lg q-py-sm">
+                <q-card-actions class="row q-px-lg q-py-sm" :class="[Dark.isActive ? 'bg-grey-10' : 'bg-grey-3']">
                     <div class="col-6 q-px-sm">
-                        <q-btn class="full-width text-body1" padding="6px" color="negative" @click="abortErrorDialog()" label="Abbrechen" />
+                        <q-btn unelevated class="full-width text-body1" padding="6px" color="negative" @click="abortErrorDialog()" label="Abbrechen" />
                     </div>
                     <div class="col-6 q-px-sm">
-                        <q-btn  class="full-width text-body1" padding="6px" color="primary" @click="saveErrorDialog()" label="Speichern" />
+                        <q-btn unelevated class="full-width text-body1" padding="6px" color="primary" @click="saveErrorDialog()" label="Speichern" />
                     </div>
                 </q-card-actions>
             </q-card>
@@ -79,8 +78,8 @@
         <q-dialog
             v-model="expiredDialog"
             persistent
-            transition-show="jump-right"
-            transition-hide="jump-right">
+            transition-show="jump-down"
+            transition-hide="jump-down">
             <q-card style="width: 700px;">
                 <q-bar class="q-pa-lg text-h6 text-white bg-negative">
                     Achtung
@@ -100,7 +99,7 @@
                 <q-separator />
                 <q-card-actions class="row q-px-lg q-py-sm" :class="[Dark.isActive ? 'bg-grey-10' : 'bg-grey-3']">
                     <div class="col-12 q-px-sm">
-                        <q-btn  align="center" class="full-width text-body1" padding="6px" color="primary" v-close-popup label="Ok" />
+                        <q-btn unelevated align="center" class="full-width text-body1" padding="6px" color="primary" v-close-popup label="Ok" />
                     </div>
                 </q-card-actions>
             </q-card>
@@ -131,6 +130,10 @@ const props = defineProps({
         default: true
     },
     fullHeightFooter: {
+        type: Boolean,
+        default: false
+    },
+    inApp: {
         type: Boolean,
         default: false
     },

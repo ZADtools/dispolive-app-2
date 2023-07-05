@@ -1,14 +1,14 @@
 <template>
     <div>
-        <div class="row q-py-sm" :class="[Dark.isActive ? 'bg-grey-10' : 'bg-white']">
+        <div class="row q-py-sm" :class="[Dark.isActive ? 'bg-grey-10' : 'bg-grey-3']">
             <div class="col-6" :key="showNav" :class="{ 'col-sm-4':  showNav, 'col-sm-6' : !showNav, 'q-pr-xs': $q.screen.gt.xs, 'q-pb-sm': $q.screen.lt.sm }">
-                <q-btn align="center" class="full-width text-body1" padding="6px" @click="showTripAbort()" color="negative" label="Fahrt Abbrechen" />
+                <q-btn unelevated align="center" class="full-width text-body1" padding="6px" @click="showTripAbort()" color="negative" label="Fahrt Abbrechen" />
             </div>
             <div class="col-6 q-pl-xs" :class="{ 'col-sm-4':  showNav, 'col-sm-6': !showNav, 'order-last': $q.screen.gt.xs  }">
-                <q-btn align="center" class="full-width text-body1" padding="6px" @click="setStatus()" color="primary" :label="tripState[item._id] && tripState[item._id].text" />
+                <q-btn unelevated align="center" class="full-width text-body1" padding="6px" @click="setStatus()" color="primary" :label="tripState[item._id] && tripState[item._id].text" />
             </div>
             <div class="col-12" v-if="showNav" :class="{ 'col-sm-4':  showNav, 'col-md-6' : !showNav }">
-                <q-btn align="center" class="full-width text-body1" padding="6px" @click="startNavigation()" color="amber-7" label="Navigation Starten" />
+                <q-btn unelevated align="center" class="full-width text-body1" padding="6px" @click="startNavigation()" color="amber-7" label="Navigation Starten" />
             </div>
         </div>
         <Dialog 
@@ -66,7 +66,7 @@
 import { watch, ref }                                               from 'vue';
 import { useRouter }                                                from 'vue-router';
 import Dialog                                                       from '../components/Dialog.vue';
-import Global                                                       from '../helpers/Global';
+import {Global}                                                       from '../helpers/Global';
 import { useFahrberichtStore }                                      from 'src/stores/fahrbericht.store';
 import { useMenuStore }                                             from 'src/stores/menu.store';
 import { useSettingsStore }                                         from 'src/stores/settings.store';

@@ -5,8 +5,8 @@
         @update:model-value="$emit('input', $event)"
         persistent
         maximized
-        transition-show="jump-right"
-        transition-hide="jump-right">
+        transition-show="jump-down"
+        transition-hide="jump-down">
         <q-card  :style="{ width: '100%', height:'calc(80vh)'}">
             <q-bar>
                 <div>Datenschutzrichtlinien</div>

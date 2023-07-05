@@ -15,14 +15,13 @@ export const useAudioStore = defineStore('audioStore', {
         async init ( ) {
             //for ios
             let path = ''
-            log(path)
 
             const accountStore = useAccountStore()
             const { device } = storeToRefs(accountStore)
 
             //for android
             if ( accountStore.device.operatingSystem === 'android' )
-                path = ''
+                path = 'assets/'
 
             NativeAudio.configure({
                 focus: false
@@ -32,7 +31,7 @@ export const useAudioStore = defineStore('audioStore', {
                 return
 
             NativeAudio.preload({
-                assetPath:path + 'adresse.mp3',
+                assetPath: path + 'adresse.mp3',
                 assetId: 'adresse',
                 volume: 1.0,
                 audioChannelNum: 1
@@ -53,10 +52,17 @@ export const useAudioStore = defineStore('audioStore', {
             });
 
             NativeAudio.preload({
-                assetPath:'neuenachricht.mp3',
+                assetPath: path + 'neuenachricht.mp3',
                 assetId: 'neueNachricht',
                 volume: 1.0,
                 audioChannelNum: 4
+            });
+
+            NativeAudio.preload({
+                assetPath: path + 'pause.mp3',
+                assetId: 'pause',
+                volume: 1.0,
+                audioChannelNum: 5
             });
         },
 
@@ -78,17 +84,17 @@ export const useAudioStore = defineStore('audioStore', {
             });
 
             NativeAudio.unload({
-                assetId: 'empty',
+                assetId: 'pause',
             });
         },
 
         async play ( file: string ) {
             log(file)
-        try {
-            await NativeAudio.play({assetId: file});
-        } catch (error) {
-            console.log(error)
-        }
+            try {
+                await NativeAudio.play({assetId: file});
+            } catch (error) {
+                log(error)
+            }
         }
     }
 });

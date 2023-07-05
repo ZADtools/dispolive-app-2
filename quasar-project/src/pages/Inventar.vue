@@ -1,13 +1,13 @@
 <template>
     <div>
         <div v-if="inApp" style="margin-bottom: 50px;">
-            <inventar :carItems="carItems" :form="form" />  
-            <q-page-sticky expand position="bottom" class="q-pl-sm q-pt-sm row" :class="[Dark.isActive ? 'bg-grey-10' : 'bg-grey-3']" >
+            <inventar :inApp="inApp" :carItems="carItems" :form="form" />  
+            <q-page-sticky expand position="bottom" class="q-pl-sm q-pt-sm q-pb-sm row" :class="[Dark.isActive ? 'bg-grey-10' : 'bg-grey-3']" >
                 <div class="col-6 q-px-sm">
-                    <q-btn class="full-width text-body1" padding="6px" color="negative"  @click="confirmAbort()" label="Abbrechen" />
+                    <q-btn unelevated class="full-width text-body1" padding="6px" color="negative"  @click="confirmAbort()" label="Abbrechen" />
                 </div>
                 <div class="col-6 q-px-sm">
-                    <q-btn class="full-width text-body1" padding="6px" color="primary" @click="saveDataDialog = true" label="Speichern" />
+                    <q-btn unelevated class="full-width text-body1" padding="6px" color="primary" @click="saveDataDialog = true" label="Speichern" />
                 </div>
             </q-page-sticky>
             <Dialog text="Bitte prüfen Sie das gesamte Inventar!" v-model="errorDataDialog" :abortShow="false" okLabel="OK" @input="(val) => errorDataDialog = val"  />
@@ -31,7 +31,7 @@
                 </div>
             </template>
             <template #content>
-                <inventar :carItems="carItems" :form="form" :fullHeight="false" :fullHeightFooter="true"/>  
+                <inventar :inApp="inApp" :carItems="carItems" :form="form" :fullHeight="false" :fullHeightFooter="true"/>  
                 <Dialog text="Bitte prüfen Sie das gesamte Inventar!" v-model="errorDataDialog" :abortShow="false" okLabel="OK" @input="(val) => errorDataDialog = val"  />
                 <Dialog text="Sie haben bereits begonnen, das Inventar zu prüfen, möchten Sie wirklich abbrechen?" v-model="confirmAbortDialog"  :func="abort" @input="(val) => confirmAbortDialog = val"  />
                 <Dialog 
@@ -43,10 +43,10 @@
             </template>
             <template #footer>
                 <div class="col-6 q-px-sm">
-                    <q-btn class="full-width text-body1" padding="6px" color="negative"  @click="confirmAbort()" label="Abbrechen" />
+                    <q-btn unelevated class="full-width text-body1" padding="6px" color="negative"  @click="confirmAbort()" label="Abbrechen" />
                 </div>
                 <div class="col-6 q-px-sm">
-                    <q-btn class="full-width text-body1" padding="6px" color="primary" @click="saveDataDialog = true" label="Speichern" />
+                    <q-btn unelevated class="full-width text-body1" padding="6px" color="primary" @click="saveDataDialog = true" label="Speichern" />
                 </div>
             </template>
         </cust-layout>

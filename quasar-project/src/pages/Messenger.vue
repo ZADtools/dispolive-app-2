@@ -1,50 +1,52 @@
 <template>
-    <div ref="scrollTarget" class="scrollHeight scroll-y">
-        <q-infinite-scroll 
-            ref="scrollList" 
-            @load="onLoad" 
-            reverse 
-            :offset="500"
-            :initial-index="index" 
-            :scroll-target="scrollTarget"
-        >
-            <template v-slot:loading>
-                <div class="row justify-center q-my-md">
-                    Daten werden geladen...
-                </div>
-            </template>
-            <div v-for="(item, index) in messages" :key="index" class="caption q-px-md">
-                <q-chat-message
-                    class="text-body1 text-bold"
-                    size="12"
-                    v-if="checkDateIndex(index)"
-                    :label="checkDateIndex(index) || ''"
-                    text-color="negative"
-                />
-
-                <q-chat-message
-                    :id="'scroll' + item._id"
-                    :key="index + timestamp + item.send"
-                    class="text-body1"
-                    :name="item.user.name + ' ' + item.user.surname "
-                    :text="[item.origNote]"
-                    :stamp-html="true"
-                    :sent="item.device"
-                    :bg-color="!item.device ? 'primary' : 'secondary'"
-                    :text-color="!item.device ? 'white' : 'white'"
-                >
-                    <template v-slot:stamp>
-                        <q-icon v-if="item.send && item.device" name="check" />
-                        {{setStamp(item)}}
-                    </template>
-                </q-chat-message>
-            </div>
-        </q-infinite-scroll>
-        <q-page-sticky expand position="bottom" class="q-pl-sm q-pt-sm" :class="[Dark.isActive ? 'bg-grey-10' : 'bg-white']" >
-            <q-input class="col" :readonly="settings.noCustomMessage ? true : false" bottom-slots autogrow filled label-color="primary" v-model="message" stack-label label="Nachricht schreiben...">
-                <template v-slot:after>
-                    <q-btn round dense flat icon="send" @click="sendMessage" />
+    <div class="height">
+        <div ref="scrollTarget" class="scrollHeight">
+            <q-infinite-scroll 
+                ref="scrollList" 
+                @load="onLoad" 
+                reverse 
+                :offset="500"
+                :initial-index="index" 
+                :scroll-target="scrollTarget"
+            >
+                <template v-slot:loading>
+                    <div class="row justify-center q-my-md">
+                        Daten werden geladen...
+                    </div>
                 </template>
+                <div v-for="(item, index) in messages" :key="index" class="caption q-px-md">
+                    <q-chat-message
+                        class="text-body1 text-bold"
+                        size="12"
+                        v-if="checkDateIndex(index)"
+                        :label="checkDateIndex(index) || ''"
+                        text-color="negative"
+                    />
+
+                    <q-chat-message
+                        :id="'scroll' + item._id"
+                        :key="index + timestamp + item.send"
+                        class="text-body1"
+                        :name="item.user.name + ' ' + item.user.surname "
+                        :text="[item.origNote]"
+                        :stamp-html="true"
+                        :sent="item.device"
+                        :bg-color="!item.device ? 'primary' : 'secondary'"
+                        :text-color="!item.device ? 'white' : 'white'"
+                    >
+                        <template v-slot:stamp>
+                            <q-icon v-if="item.send && item.device" name="check" />
+                            {{setStamp(item)}}
+                        </template>
+                    </q-chat-message>
+                </div>
+            </q-infinite-scroll>
+        </div>
+        <q-page-sticky expand position="bottom" style="z-index: 9999;" class="q-pl-sm q-pt-sm" :class="[Dark.isActive ? 'bg-grey-10' : 'bg-white']" >
+                <q-input class="col" :readonly="settings.noCustomMessage ? true : false" bottom-slots autogrow filled label-color="primary" v-model="message" stack-label label="Nachricht schreiben...">
+                    <template v-slot:after>
+                        <q-btn round dense flat icon="send" @click="sendMessage" />
+                    </template>
             </q-input>
         </q-page-sticky>
     </div>
@@ -62,6 +64,7 @@ import { useAuditStore }                                                    from
 import { storeToRefs }                                                      from 'pinia';
 import debug                                                                from 'debug';
 import dayjs                                                                from 'dayjs';
+import 'dayjs/locale/de'
 import relativeTime                                                         from 'dayjs/plugin/relativeTime';
 dayjs.extend(relativeTime)
 const log                                                                   = debug('app:messages');
@@ -94,10 +97,9 @@ setInterval( () => {
 watch( lastItem, ( newVal ) => {
     if ( newVal ) {
         setTimeout( () => {
-            const element = document.getElementById(`scroll${newVal}`);
-
+            const element = document.querySelector('.scrollHeight');
             if (element)
-                element.scrollIntoView();
+                element.scrollTop = element.scrollHeight;
         } )
     }
 } )
@@ -188,20 +190,25 @@ function setStamp ( item: { date: string } ) {
 
 Keyboard.addListener('keyboardDidShow', () => {
     setTimeout( () => {
-        const element = document.getElementById(`scroll${lastItem.value}`);
-
+        const element = document.querySelector('.scrollHeight');
         if (element)
-            element.scrollIntoView();
+            element.scrollTop = element.scrollHeight;
     } )
 });
 </script>
 
 <style scoped>
-    .scrollHeight {
-        padding-bottom: 100px;
-        height: calc(100vh - 152px);
+    :deep(.scrollHeight) {
+        padding-top: 50px;
+        height: calc(100vh - 250px);
         width: 100%;
-        overflow-x: hidden;
+        overflow-y: scroll;
+    }
+
+    .height {
+        padding-bottom: 100px;
+        min-height: calc(100vh - 150px);
+        width: 100%;
     }
 
     :deep(.q-field--dark .q-field__marginal) {

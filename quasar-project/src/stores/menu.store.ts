@@ -64,6 +64,7 @@ export interface IFahrbericht {
     transVorhanden?:   string;
     newsPatient?:      string; 
     newsCar?:         string;
+    time?:           string;
 }
 
 export interface IMenuState {
@@ -130,6 +131,9 @@ export const useMenuStore = defineStore('menuStore', {
                 progress = 1
                 status = { key: 'startBegin', text: 'Anfahrt' }
             }
+
+            if (fb.type === 'Linie' && fb.time) 
+                progress = 0.25 
 
             this._progress[fb._id] = progress
             this._tripState[fb._id] = status
@@ -221,7 +225,6 @@ export const useMenuStore = defineStore('menuStore', {
             }
 
             if ( status === 'sonderrechte' ) {
-                console.log('1111', data)
                 data.status.sonderrechte = 1;
                 navItem.value[0].sonderrechte = 1;
                 io.value.emit( 'setSonderrechte', data );

@@ -71,9 +71,8 @@
                 </template>
             </q-select>
         </div>
-
-             <div v-for="(items, index) in desiBereich" :key="index" class="q-px-none q-py-none">
-                 <div v-if="index == 3" class="row bg-orange text-body1 q-pa-sm text-bold text-white">
+            <div v-for="(items, index) in desiBereich" :key="index" class="q-px-none q-py-none">
+                <div v-if="index == 3" class="row bg-orange text-body1 q-pa-sm text-bold text-white">
                     Geräte
                 </div>
                 <div v-if="index == 1" class="row bg-orange text-body1 q-pa-sm text-bold text-white">
@@ -82,12 +81,12 @@
                 <div v-if="index == 2" class="row bg-orange text-body1 q-pa-sm text-bold text-white">
                     Patientenraum
                 </div>
-
                 <div v-for="item of items" :key="item._id">
                     <div class="row groupHeader" :class="[Dark.isActive ? 'bg-grey-10' : 'bg-grey-2']">
                         <div class="col-2">
                             <q-toggle
-                                v-model="form.protokoll[item._id]"
+                                :model-value="form.protokoll[item._id]"
+                                @update:model-value="updateModelValue($event, item._id)"
                                 class="text-primary"
                                 keep-color
                             />
@@ -146,19 +145,19 @@
             </div>
         <div class="row q-px-lg q-py-sm" :class="[Dark.isActive ? 'bg-grey-10' : 'bg-grey-3']" >
             <div class="col-6 q-px-sm">
-                <q-btn class="full-width text-body1" padding="6px" color="negative" @click="confirmAbort()" label="Abbrechen" />
+                <q-btn unelevated class="full-width text-body1" padding="6px" color="negative" @click="confirmAbort()" label="Abbrechen" />
             </div>
             <div class="col-6 q-px-sm">
-                <q-btn class="full-width text-body1" padding="6px" color="primary" @click="confirmSave()" label="Speichern" />
+                <q-btn unelevated class="full-width text-body1" padding="6px" color="primary" @click="confirmSave()" label="Speichern" />
             </div>
         </div>
         <q-dialog
             :selectedItem="changeItemData"
             v-model="changeDataDialog"
             persistent
-            transition-show="jump-right"
-            transition-hide="jump-right">
-            <q-card style="width: 700px;">
+            transition-show="jump-down"
+            transition-hide="jump-down">
+            <q-card style="width: 700px;" class="shadow-0">
                 <q-bar class="q-pa-lg text-h6 text-white bg-primary">
                     Daten ändern
                 </q-bar>
@@ -177,10 +176,10 @@
                 <q-separator />
                 <q-card-actions class="row q-px-lg q-py-sm" :class="[Dark.isActive ? 'bg-grey-10' : 'bg-grey-3']">
                     <div class="col-6 q-px-sm">
-                        <q-btn class="full-width" padding="6px" color="negative" v-close-popup label="Abbrechen" />
+                        <q-btn unelevated class="full-width" padding="6px" color="negative" v-close-popup label="Abbrechen" />
                     </div>
                     <div class="col-6 q-px-sm">
-                        <q-btn class="full-width" padding="6px" color="primary" @click="setChangeItemData" label="Ändern" />
+                        <q-btn unelevated class="full-width" padding="6px" color="primary" @click="setChangeItemData" label="Ändern" />
                     </div>
                 </q-card-actions>
             </q-card>
@@ -188,8 +187,8 @@
         <q-dialog
             v-model="saveDataDialog"
             persistent
-            transition-show="jump-right"
-            transition-hide="jump-right">
+            transition-show="jump-down"
+            transition-hide="jump-down">
             <q-card style="width: 700px;">
                 <q-bar class="q-pa-lg text-h6 text-white bg-primary">
                     Speichern
@@ -204,10 +203,10 @@
                 <q-separator />
                 <q-card-actions class="row q-px-lg q-py-sm" :class="[Dark.isActive ? 'bg-grey-10' : 'bg-grey-3']">
                     <div class="col-6 q-px-sm">
-                        <q-btn class="full-width text-body1" padding="6px" color="negative" v-close-popup label="Abbrechen" />
+                        <q-btn unelevated class="full-width text-body1" padding="6px" color="negative" v-close-popup label="Abbrechen" />
                     </div>
                     <div class="col-6 q-px-sm">
-                        <q-btn class="full-width text-body1" padding="6px" color="primary" @click="saveData(changeItemData)" label="Speichern" />
+                        <q-btn unelevated class="full-width text-body1" padding="6px" color="primary" @click="saveData(changeItemData)" label="Speichern" />
                     </div>
                 </q-card-actions>
             </q-card>
@@ -216,8 +215,8 @@
             v-model="errorDataDialog"
             :selectError="selectError"
             persistent
-            transition-show="jump-right"
-            transition-hide="jump-right">
+            transition-show="jump-down"
+            transition-hide="jump-down">
             <q-card style="width: 700px;">
                 <q-bar class="q-pa-lg text-h6 text-white bg-negative">
                     Achtung
@@ -232,7 +231,7 @@
                 <q-separator />
                 <q-card-actions class="row q-px-lg q-py-sm" :class="[Dark.isActive ? 'bg-grey-10' : 'bg-grey-3']">
                     <div class="col-12 q-px-sm">
-                        <q-btn align="center" class="full-width text-body1" padding="6px" color="primary" v-close-popup label="Ok" />
+                        <q-btn unelevated align="center" class="full-width text-body1" padding="6px" color="primary" v-close-popup label="Ok" />
                     </div>
                 </q-card-actions>
             </q-card>
@@ -240,8 +239,8 @@
         <q-dialog
             v-model="confirmAbortDialog"
             persistent
-            transition-show="jump-right"
-            transition-hide="jump-right">
+            transition-show="jump-down"
+            transition-hide="jump-down">
             <q-card style="width: 700px;">
                 <q-bar class="q-pa-lg text-h6 text-white bg-negative">
                     Achtung
@@ -257,10 +256,10 @@
                 <q-card-actions class="row q-px-lg q-py-sm" :class="[Dark.isActive ? 'bg-grey-10' : 'bg-grey-3']">
                    
                     <div class="col-6 q-px-sm">
-                        <q-btn class="full-width text-body1" padding="6px" color="negative" @click="abort()" label="Ja" />
+                        <q-btn unelevated class="full-width text-body1" padding="6px" color="negative" @click="abort()" label="Ja" />
                     </div>
                     <div class="col-6 q-px-sm">
-                        <q-btn class="full-width text-body1" padding="6px" color="primary" v-close-popup label="Nein" />
+                        <q-btn unelevated class="full-width text-body1" padding="6px" color="primary" v-close-popup label="Nein" />
                     </div>
                     
                 </q-card-actions>
@@ -273,7 +272,7 @@
 import { ref, watch, computed, onActivated }                            from 'vue';
 import { useRouter }                                                    from 'vue-router';
 import { uid, extend, Dark }                                            from 'quasar';
-import Global                                                           from '../helpers/Global';
+import {Global}                                                           from '../helpers/Global';
 import { useDesiprotokolleStore }                                       from 'src/stores/desiprotokolle.store';
 import { storeToRefs }                                                  from 'pinia';
 import { useNavStore }                                                  from 'src/stores/nav.store';
@@ -394,14 +393,6 @@ const form = ref<IDefaultForm>(extend(true, {}, defaultForm));
 
 let timerFunc: any = null;
 
-// watch( startTimer, ( newVal ) => {
-//     form.value.desiStartZeit = dayjs().format('HH:mm');
-//     if (newVal) {
-//         clickArt();
-//         desiprotokolleStore._startTimer = false;
-//     }
-// } )
-
 //desinfektionsart auswählen
 function clickArt ( stop?: boolean ) {
     form.value.desiStartZeit = dayjs().format('HH:mm');
@@ -443,8 +434,6 @@ function setDesiArt() {
                 value: 'abschlussdesinfektion',
             } 
         ]
-
-        //clickArt(true);
     } else {
         desiArt.value = [
             { 
@@ -452,12 +441,15 @@ function setDesiArt() {
                 value: 'fahrtdesinfektion'
             }
         ]
-
-        //form.value.art = 'fahrtdesinfektion';
-        //clickArt();
     }
+}
 
-    //resetForm(true)
+function updateModelValue( val: string, id: string ) {
+    form.value.protokoll[id] = val
+    if (selTripsLength.value > 0) {
+        form.value.art = 'fahrtdesinfektion'
+        clickArt()
+    }
 }
 
 function createObj( newVal: any ) {
@@ -498,6 +490,7 @@ function changeData (item: any) {
 }
 
 async function saveData () {
+    console.log(222, selectedFahrten.value)
     if (selectedFahrten.value.length === 0 ) {
         log('keine aktive fahrt')
         form.value._id = uid();
@@ -518,8 +511,10 @@ async function saveData () {
 
             await auditStore.setItem({type: 'desinfektion', value: data});
             
-            const navPoint = { ...fb.item, desiProt: true  }
-            fahrberichtStore.updateItem(navPoint)
+            const navPoint: any = extend( true, {}, fb.item )
+            navPoint.desiProt = true
+            accountStore.globalDispatcher(navPoint)
+            selectedFahrt.value = []
 
             log('formdata', data)  
         }

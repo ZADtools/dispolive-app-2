@@ -5,7 +5,7 @@
                 <q-item-section class="q-pr-md">{{item.type}}</q-item-section>
                 <q-item-section>{{item.date}}</q-item-section>
                 <q-item-section class="col-1">
-                    <q-btn color="negative" dense size="sm" icon="fas fa-trash" label="" @click="showDeleteRow(item)" />
+                    <q-btn unelevated color="negative" dense size="sm" icon="fas fa-trash" label="" @click="showDeleteRow(item)" />
                 </q-item-section>
             </q-item>
             <q-item v-if="data.length === 0">

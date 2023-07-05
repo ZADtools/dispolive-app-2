@@ -7,6 +7,7 @@ import { uid, Notify, extend }                              from 'quasar';
 import { IFahrbericht }                             from './menu.store';
 import { useAccountStore }                          from './account.store';
 import { useMessengerStore }                        from './messenger.store';
+import { useSocketStore }                           from './socket.store';
 import { accountService }                           from 'src/services/account.service'; 
 import { useNavStore }                              from './nav.store';
 
@@ -174,9 +175,12 @@ export const useAuditStore = defineStore('auditStore', {
         async sendData ( ) {
             const accountStore = useAccountStore()
             const { connected } = storeToRefs(accountStore)
-            const connect       = connected.value;
 
-            if ( !connect )
+            const socketStore   = useSocketStore()
+            const { connected: socketConnect }    = storeToRefs(socketStore)
+            const networkConnect       = connected.value
+
+            if ( !networkConnect || !socketConnect.value )
                 return false
 
             // Wenn Daten schon gesendet werden abbrechen
@@ -278,8 +282,6 @@ export const useAuditStore = defineStore('auditStore', {
                         } )
                     }
 
-                    //const data = fb.item.stops = item.value //{...fb.item, ...item.value};
-                    
                     await accountStore.globalDispatcher(item.value)
                 }
 

@@ -20,6 +20,7 @@
             </div>
             <div class="col-6 q-pl-sm q-pt-xs text-body1"> 
                 <q-btn 
+                    unelevated
                     align="center"
                     padding="6px" 
                     class="full-width text-body1" 

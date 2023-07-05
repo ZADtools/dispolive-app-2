@@ -2,6 +2,6 @@
 <resources>
     <string name="app_name">dispolive</string>
     <string name="title_activity_main">dispolive</string>
-    <string name="package_name">app.zadtools.de</string>
-    <string name="custom_url_scheme">app.zadtools.de</string>
+    <string name="package_name">app.dispoliveZadTools.de</string>
+    <string name="custom_url_scheme">app.dispoliveZadTools.de</string>
 </resources>

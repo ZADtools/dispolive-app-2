@@ -4,9 +4,9 @@
         :modelValue="modelValue"
         @update:model-value="$emit('update:modelValue', $event)"
         persistent
-        transition-show="jump-right"
-        transition-hide="jump-right">
-        <q-card>
+        transition-show="jump-down"
+        transition-hide="jump-down">
+        <q-card class="shadow-0">
             <q-bar class="q-pa-lg text-h6 text-white" :class=" headertext == 'Achtung' ?  'bg-negative' : 'bg-primary'" >
                 {{headertext}}
             </q-bar>
@@ -15,8 +15,8 @@
                 <div class="text-body1" v-html="desc"></div>
             </q-card-section>
             <q-card-actions align="center" class="row" :class="[Dark.isActive ? 'bg-grey-10' : 'bg-grey-3']" >
-                <q-btn padding="6px" v-if="abortShow || abortShow === undefined" class="col-5 text-body1" :label="abortLabel ? abortLabel : 'Nein'" color="negative" @click="funcAbort ? funcAbort(abortParam) : ''" v-close-popup />
-                <q-btn  padding="6px" v-if="okShow || okShow === undefined" class="col-5 text-body1" :label="okLabel ? okLabel : 'Ja'" color="primary" @click="func ? func() : ''"  v-close-popup />
+                <q-btn unelevated padding="6px" v-if="abortShow || abortShow === undefined" class="col-5 text-body1" :label="abortLabel ? abortLabel : 'Nein'" color="negative" @click="funcAbort ? funcAbort(abortParam) : ''" v-close-popup />
+                <q-btn unelevated padding="6px" v-if="okShow || okShow === undefined" class="col-5 text-body1" :label="okLabel ? okLabel : 'Ja'" color="primary" @click="func ? func() : ''"  v-close-popup />
             </q-card-actions>
         </q-card>
     </q-dialog>

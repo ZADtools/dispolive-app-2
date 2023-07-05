@@ -6,7 +6,9 @@ import { useAccountStore }          from './account.store';
 import { useKostentraegerStore }    from './kostentraeger.store';
 import { Rcr1010 }                  from '@w4b/rcr1010';
 import dayjs                        from 'dayjs';
-const log                           = Debug('app:fahrzeuge.module');
+const log                            = Debug('app:fahrzeuge.module');
+import customParseFormat            from 'dayjs/plugin/customParseFormat'
+dayjs.extend(customParseFormat)
 export interface ICardreaderState {
     _isScanning: boolean;
     _cardResponse: any;
@@ -170,7 +172,7 @@ export const useCardreaderStore = defineStore('cardreaderStore', {
             const status = await BarcodeScanner.checkPermission({force: true});
 
             Dark.set(false);
-            
+            console.log(status)
             if (status.granted) {
                 const result = await this.startBarcodeScanning();
                 let type = 'negative'
@@ -283,9 +285,10 @@ export const useCardreaderStore = defineStore('cardreaderStore', {
         
                 data.rawInsuranceData = pat.rawInsuranceData ? pat.rawInsuranceData : 'Keine Daten';
                 data.rawPersonalData  = pat.rawPersonalData ? pat.rawPersonalData : 'Keine Daten';
-                
-                if (pat.geburtsdatum)
-                    data.birthday = dayjs(pat.geburtsdatum, 'DD-MM-YYYY').format('YYYY-MM-DD');
+
+                if (pat.geburtsdatum) {
+                    data.birthday = dayjs(pat.geburtsdatum, 'DD-MM-YYYY').format('YYYY-MM-DD')
+                }
         
                 data.stammVersNr      = pat.versichertenNummer ? pat.versichertenNummer : data.stammVersNr;
                 data.versNr           = pat.kostentraegerkennung;
