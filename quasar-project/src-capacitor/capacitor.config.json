@@ -8,6 +8,14 @@
     "useLegacyBridge": true
   },
   "plugins": {
+    "BluetoothLe": {
+      "displayStrings": {
+        "scanning": "Am Scannen...",
+        "cancel": "Abbrechen",
+        "availableDevices": "Verfügbare Geräte",
+        "noDeviceFound": "Kein Gerät gefunden"
+      }
+    },
     "SplashScreen": {
       "launchShowDuration": 5000,
       "launchAutoHide": true,

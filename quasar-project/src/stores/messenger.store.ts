@@ -7,6 +7,7 @@ import { LocalNotifications }                       from '@capacitor/local-notif
 import { accountService }                           from 'src/services/account.service';
 import { useAuditStore }                            from './audit.store';
 import { useAudioStore }                            from './audio.store';
+import { useSocketStore }                           from './socket.store';
 
 const log       = Debug('app:messenger.module');
 
@@ -245,6 +246,13 @@ export const useMessengerStore = defineStore('messengerStore', {
                 this.setReceive({data: [data]})
             }
             audioStore.play( 'neueNachricht' );
+        },
+        allRead( ) { 
+            const fahrzeugeStore = useFahrzeugeStore();
+            const { item } = storeToRefs(fahrzeugeStore);
+            const socketStore       = useSocketStore();
+            const { io }            = storeToRefs(socketStore);
+            io.value.emit( 'allRead', { car: item.value?._id } );
         }
     },
 });

@@ -61,6 +61,30 @@
                 </q-form>
             </q-card>
         </q-dialog>
+        <q-dialog
+            v-model="showPanicDialog"
+            persistent
+            transition-show="jump-down"
+            transition-hide="jump-down">
+            <q-card style="width: 700px;">
+                <q-bar class="q-pa-lg text-h6 text-white bg-primary">
+                    Panik Alarm in {{ panicTime }} Sekunden
+                </q-bar>
+                <q-form greedy no-error-focus ref="specialRightsForm">
+                    <div class="row q-px-xl q-py-sm">
+                        <div class="col-12 text-bold">
+                            Sie oder andere befinden sich in Gefahr. In {{ panicTime }} Sekunden wird der Alarm in der Leitstelle ausgelöst.
+                        </div>
+                    </div>
+                    <q-separator />
+                    <q-card-actions class="row q-px-lg q-py-sm" :class="[Dark.isActive ? 'bg-grey-10' : 'bg-grey-3']">
+                        <div class="col-12 q-px-sm">
+                            <q-btn unelevated class="full-width text-body1" padding="6px" color="negative" v-close-popup @click="abortPanicButton" label="Abbrechen" />
+                        </div>
+                    </q-card-actions>
+                </q-form>
+            </q-card>
+        </q-dialog>
     </div>
 </template>
 
@@ -79,6 +103,7 @@ import { useDesiprotokolleStore }                           from 'src/stores/des
 import { useRouter }                                        from 'vue-router';
 import { storeToRefs, defineStore }                         from 'pinia';
 import { Dark }                                             from 'quasar';
+import { clear } from 'console';
 
 const log                                                   = debug('app:MenuLink');
 
@@ -86,7 +111,7 @@ const navStore = useNavStore();
 const { data: navItems, selected: selectedNavPoint } = storeToRefs(navStore);
 
 const accountStore = useAccountStore();
-const { title: getTitle, darkMode, timer: desiTimer } = storeToRefs(accountStore);
+const { title: getTitle, darkMode, timer: desiTimer, fahrer, beifahrer } = storeToRefs(accountStore);
 
 const menuStore = useMenuStore();
 const { item: getStatus, pauseTime, progress } = storeToRefs(menuStore);
@@ -123,7 +148,8 @@ const   iconColor               = ref('bg-grey-1'),
         specialrightDialog      = ref(false),
         confirmSpecialRights    = ref(false),
         specialRightsForm       = ref(),
-        noSpecialRightsAllowed  = ref(false);
+        noSpecialRightsAllowed  = ref(false),
+        showPanicDialog         = ref(false);
 
 if (props.item.color) {
     iconColor.value         = `bg-${props.item.color}`;
@@ -155,6 +181,8 @@ function setSpecialRights () {
             if (navItems.value.length === 1 ) {
                 const item = navItems.value[0].item;
                 const data = {
+                    fahrer:         fahrer.value?._id,
+                    beifahrer:      beifahrer.value?._id,
                     _id:            item._id,
                     car:            selectedCar.value._id,
                     sonderrechte:   1,
@@ -185,6 +213,30 @@ function selectedMenuPoint ( item: any ) {
         return exists ? 'selectedDark' : 'notSelected';
 
     return exists ? 'selected' : 'notSelected';
+}
+
+let panicAlarm: any = null
+const panicTime =  ref(5)
+async function panicDialog () {
+    panicTime.value = 5
+    clearTimeout(panicAlarm);
+    function setPanicTime () {
+        panicAlarm = setTimeout(() => {
+            panicTime.value = panicTime.value - 1;
+            if (panicTime.value > 0)
+                setPanicTime()
+            else {
+                accountStore.sendPanicButton();
+                showPanicDialog.value = false;
+            }
+        }, 1000);
+    }
+    setPanicTime()
+    showPanicDialog.value = true;
+}
+
+function abortPanicButton () {
+    clearTimeout(panicAlarm);
 }
 
 async function specialrights () {
@@ -234,6 +286,9 @@ async function clicked( item: any ) {
     if (item.function) {
         if ( item.function === 'specialrights' )
             specialrights()
+
+        if ( item.function === 'setPanicDialog' )
+            panicDialog()
 
         if ( item.function === 'pause' ) {
             const stat = await menuStore.setStatus({status: 'pause'});

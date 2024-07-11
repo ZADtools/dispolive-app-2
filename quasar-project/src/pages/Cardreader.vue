@@ -1,8 +1,39 @@
 <template>
     <div>
-        <div v-show="!isScanning">
-            <div>
-                <div class="text-body1 text-bold q-ml-lg">In folgenden Fällen <b>MUSS</b> neu gekoppelt werden:</div>
+        <div v-show="!isScanning && !device">
+            <div class="row">
+                
+                <div class="col text-center text-body1 text-bold q-my-xl">
+                    Bitte wählen Sie, Welches Gerät verwendet wird?
+                </div>
+            </div>
+            <div class="row q-pa-sm text-center">
+                <!-- <div class="col-12 col-sm-6">
+                    <q-img
+                        @click="setDevice('bR301BLE')"
+                        src="~assets/br301ble.png"
+                        :ratio="16/9"
+                        width="300px"
+                    />
+                    <div class="text-h6 q-mt-sm">bR301BLE</div>
+                    <div class="text-secondary">Empfohlen</div>
+                </div> -->
+                <div class="col-12">
+                    <q-img
+                        @click="setDevice('RC1010')"
+                        src="~assets/rc1010.png"
+                        :ratio="16/9"
+                        width="300px"
+                    />
+                    <div class="text-h6 q-mt-sm">RCR1010</div>
+                    <div class="text-secondary">Aktuell</div>
+                </div>
+            </div>
+        </div>
+        <div v-show="!isScanning && device">
+            <div class="q-ml-lg">
+                <div class="text-h5 text-bold q-mb-sm">Kartenleser: {{ device }}</div>
+                <div class="text-body1 text-bold">In folgenden Fällen <b>MUSS</b> neu gekoppelt werden:</div>
                 <ul>
                     <li>NACH einem UPDATE oder einer NEUINSTALLATION der dispolive-App</li>
                     <li>Wenn die Schlüsselkarte (NICHT die Gesundheitskarte!) VERSEHENTLICH in den Kartenleser gesteckt wurde</li>
@@ -62,12 +93,17 @@ const accountStore = useAccountStore();
 const { darkMode } = storeToRefs(accountStore);
 
 const cardreaderStore = useCardreaderStore();
-const { isScanning, isReadingCard, cardResponse, readingCardMessage } = storeToRefs(cardreaderStore);
+const { isScanning, isReadingCard, cardResponse, readingCardMessage, device } = storeToRefs(cardreaderStore);
 
 onBeforeMount(async () => {
     accountStore.setTitle('Kartenleser');
-    accountStore.setSecondHeader('cardreader')
+    accountStore.setSecondHeader('')
 });
+
+function setDevice( item: string ) {
+    cardreaderStore._device = item;
+    accountStore.setSecondHeader('cardreader')
+}
 
 function showSetup () {
     openURL('http://wiki.dispolive.de/doku.php?id=5appkartenleser#kartenleser_verbinden')
@@ -88,6 +124,7 @@ onUnmounted(() => {
 </script>
 
 <style lang="scss">
+
     .raw-data {
         margin: 20px;
         padding: 20px;

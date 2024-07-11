@@ -113,6 +113,14 @@ export const Global = () => {
             fontColor:  'grey-1'
         },
         {
+            title:      'Panik-Buzzer',
+            icon:       'fa-solid fa-person-harassing',
+            link:       'panicButton',
+            color:      'red-5',
+            fontColor:  'grey-1',
+            function:    'setPanicDialog'
+        },
+        {
             title:      'Logout',
             icon:       'fas fa-sign-out-alt',
             link:       'logout',

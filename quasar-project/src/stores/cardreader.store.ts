@@ -4,13 +4,24 @@ import { BarcodeScanner }           from '@capacitor-community/barcode-scanner';
 import { Dark, Notify, Loading, QSpinnerOval } from 'quasar';
 import { useAccountStore }          from './account.store';
 import { useKostentraegerStore }    from './kostentraeger.store';
+import { BleClient, numberToUUID }                from '@capacitor-community/bluetooth-le';
 import { Rcr1010 }                  from '@w4b/rcr1010';
 import dayjs                        from 'dayjs';
 const log                            = Debug('app:fahrzeuge.module');
 import customParseFormat            from 'dayjs/plugin/customParseFormat'
+import { accountService } from 'src/services/account.service';
 dayjs.extend(customParseFormat)
+
+const BATTERY_SERVICE = '0000180f-0000-1000-8000-00805f9b34fb';
+const CHARACTERISTIC_BATTERY = '00002a19-0000-1000-8000-00805f9b34fb';
+const UUID_SERVICE_C4 = '46540001-0002-00C4-0000-465453414645';
+const UUID_CHAR_WRITE_C4 = '46540002-0002-00C4-0000-465453414645';
+const UUID_CHAR_NOTIF_C4 = '46540003-0002-00C4-0000-465453414645'
+const UUID_SERVICE_FIRMWARE_VERSION_C4 = '465400F0-0002-00C4-0000-465453414645';
+const UUID_CHAR_FIRMWARE_VERSION_C4 = '465400F1-0002-00C4-0000-465453414645';
 export interface ICardreaderState {
     _isScanning: boolean;
+    _device: string;
     _cardResponse: any;
     _scanning: boolean;
     _message: string;
@@ -27,6 +38,7 @@ export interface ICardreaderState {
 export const useCardreaderStore = defineStore('cardreaderStore', {
     state: (): ICardreaderState => ({
         _isScanning: false,
+        _device: '',
         _cardResponse: {},
         _scanning: false,
         _message: '',
@@ -51,6 +63,7 @@ export const useCardreaderStore = defineStore('cardreaderStore', {
         message: (state) => state._message,
         isReadingCard: (state) => state._readingCard,
         readingCardMessage: (state) => state._readingCardMessage,
+        device: (state) => state._device,
     },
     actions: {
         async parseRawPersonalData ( xmlString: string ) {
@@ -169,136 +182,196 @@ export const useCardreaderStore = defineStore('cardreaderStore', {
             await BarcodeScanner.stopScan()
         },
         async startPairing() {
-            const status = await BarcodeScanner.checkPermission({force: true});
+            if ( this._device === 'bR301BLE' ) {
+                const id = numberToUUID(0x180d)
+                // const device = await BleClient.requestDevice({
+                //     services: [],
+                //     allowDuplicates: true,
+                //     optionalServices: [BATTERY_SERVICE, UUID_SERVICE_C4, UUID_SERVICE_FIRMWARE_VERSION_C4],
+                // });
 
-            Dark.set(false);
-            console.log(status)
-            if (status.granted) {
-                const result = await this.startBarcodeScanning();
-                let type = 'negative'
-                await this.stopBarcodeScanning();
-                let message = '';
-
-                if (result.hasContent) {
-                    const code = result.content;
-                    const paired = await Rcr1010.startPairing({code});
-                    log('paired', paired);
-                    if (paired.value) {
-                        type = 'positive';
-                        message = 'Gerät wurde erfolgreich gekoppelt';
-                    } else {
-                        message = 'Gerät konnte nicht gekoppelt werden';
+                await BleClient.requestLEScan(
+                    {
+                      services: [],
+                      allowDuplicates: true,
+                    },
+                    (result) => {
+                      console.log('received new scan result', result);
                     }
-                } else {
-                    message = 'Barcode konnte nicht gelesen werden';
+                  );
+
+                  setTimeout(async () => {
+                    await BleClient.stopLEScan();
+                  }, 2000)
+                //console.log('device', device)
+            }
+            if ( this._device === 'RC1010' ) {
+                const status = await BarcodeScanner.checkPermission({force: true});
+
+                Dark.set(false);
+                if (status.granted) {
+                    const result = await this.startBarcodeScanning();
+                    let type = 'negative'
+                    await this.stopBarcodeScanning();
+                    let message = '';
+
+                    if (result.hasContent) {
+                        const code = result.content;
+                        const paired = await Rcr1010.startPairing({code});
+                        log('paired', paired);
+                        if (paired.value) {
+                            type = 'positive';
+                            message = 'Gerät wurde erfolgreich gekoppelt';
+                        } else {
+                            message = 'Gerät konnte nicht gekoppelt werden';
+                        }
+                    } else {
+                        message = 'Barcode konnte nicht gelesen werden';
+                    }
+
+                    this._message = message;
+
+                    const accountStore = useAccountStore();
+
+                    Dark.set(accountStore._darkMode);
+
+                    if (type === 'positive')
+                        Notify.create({
+                            type,
+                            message,
+                            position: 'bottom',
+                            progress: true,
+                            timeout: 2000,
+                            color: 'secondary',
+                            classes: 'glossy',
+                        })
                 }
+            }
+        },
+        backToDevice () { 
+            const accountStore = useAccountStore();
+            this._device = '';
+            accountStore.setSecondHeader('');
+        },
+        async readCard () {
+            try {
+                clearTimeout(this._loadingTimeout)
+                this._cardResponse = {}
+                const isPaired = await Rcr1010.isPaired();
+                log('isPaired', isPaired.value)
+                if (isPaired.value) {
+                    this._readingCardMessage = 'Warte auf Gesundheitskarte...'
+                    this._readingCard = true
+                    Loading.show({...this._loadingDefault, ...{message: this._readingCardMessage}})
+                    this._loadingTimeout = setTimeout( () => { 
+                        Loading.hide() 
+                        this._readingCard = true
+                        this.stopReadCard()
+                    }, 20000)
+                    Rcr1010.startScan()
+                } else {
+                    const message = 'Das Gerät ist nicht mehr gekoppelt'
+                    this._message = message;
 
-                this._message = message;
-
-                const accountStore = useAccountStore();
-
-                Dark.set(accountStore._darkMode);
-
-                if (type === 'positive')
                     Notify.create({
-                        type,
+                        type: 'negative',
                         message,
                         position: 'bottom',
                         progress: true,
                         timeout: 2000,
-                        color: 'secondary',
+                        color: 'negative',
                         classes: 'glossy',
                     })
-            }
-        },
-        async readCard () {
-            clearTimeout(this._loadingTimeout)
-            this._cardResponse = {}
-            const isPaired = await Rcr1010.isPaired();
-            log('isPaired', isPaired.value)
-            if (isPaired.value) {
-                this._readingCardMessage = 'Warte auf Gesundheitskarte...'
-                this._readingCard = true
-                Loading.show({...this._loadingDefault, ...{message: this._readingCardMessage}})
-                this._loadingTimeout = setTimeout( () => { 
-                    Loading.hide() 
-                    this.stopReadCard()
-                }, this._loadingTimeoutTime)
-                Rcr1010.startScan()
-            } else {
-                const message = 'Das Gerät ist nicht mehr gekoppelt'
-                this._message = message;
+                }
 
+                log('readCard done')
+            } catch (error) {
+                log('readCard error', error)
+                this._readingCard = false
+                Loading.hide()
+                this.stopReadCard()
                 Notify.create({
                     type: 'negative',
-                    message,
+                    message: 'Daten konnten nicht gelesen werden. Bitte versuchen Sie es erneut.',
                     position: 'bottom',
                     progress: true,
-                    timeout: 2000,
+                    timeout: 5000,
                     color: 'negative',
                     classes: 'glossy',
                 })
             }
-
-            log('readCard done')
         },
         async stopReadCard( ) {
             Rcr1010.stopScan()
             this._readingCard = false
         },
         setCardData ( data: any ) {
-            const pat = this._cardResponse;
-            const kostentraegerStore = useKostentraegerStore();
-            
-            //privat KK suchen
-            if (pat.privat === 'true') {
-                const kk: any = kostentraegerStore._data?.find( ( kk ) => {
-                    return kk._id === 'dd7e8e85-1c9b-4aee-9622-14680757de2d';
-                } )
+            try {
+                const pat = this._cardResponse;
+                const kostentraegerStore = useKostentraegerStore();
+                
+                //privat KK suchen
+                if (pat.privat === 'true') {
+                    const kk: any = kostentraegerStore._data?.find( ( kk ) => {
+                        return kk._id === 'dd7e8e85-1c9b-4aee-9622-14680757de2d';
+                    } )
 
-                if ( kk ) {
-                    data.kkId =             kk._id;
-                    data.krankenkasse =     kk.name;
-                }
-            } else {
-                const kk: any = kostentraegerStore._data?.find( ( kk ) => {
-                    return kk._id === pat.kostentraegerkennung;
-                } )
-
-                if ( kk ) {
-                    data.kkId =             kk._id;
-                    data.krankenkasse =     kk.name;
+                    if ( kk ) {
+                        data.kkId =             kk._id;
+                        data.krankenkasse =     kk.name;
+                    }
                 } else {
-                    data.kkId =             'N/A';
-                    data.krankenkasse =     pat.kassenname;
-                }
-        
-                data.patSurname       = pat.nachname || data.patSurname;
-                data.patName          = pat.vorname  || data.patName;
-                data.patZip           = pat.postleitzahl || data.patZip;
-                data.patCity          = pat.ort || data.patCity;
-        
-                const patStreet = pat.strasse || data.patStreet || '',
-                    hausnummer = pat.hausnummer || '';
-        
-                data.patStreet        = patStreet + ' ' + hausnummer;
-        
-                data.rawInsuranceData = pat.rawInsuranceData ? pat.rawInsuranceData : 'Keine Daten';
-                data.rawPersonalData  = pat.rawPersonalData ? pat.rawPersonalData : 'Keine Daten';
+                    const kk: any = kostentraegerStore._data?.find( ( kk ) => {
+                        return kk._id === pat.kostentraegerkennung;
+                    } )
 
-                if (pat.geburtsdatum) {
-                    data.birthday = dayjs(pat.geburtsdatum, 'DD-MM-YYYY').format('YYYY-MM-DD')
+                    if ( kk ) {
+                        data.kkId =             kk._id;
+                        data.krankenkasse =     kk.name;
+                    } else {
+                        data.kkId =             'N/A';
+                        data.krankenkasse =     pat.kassenname;
+                    }
+            
+                    data.patSurname       = pat.nachname || data.patSurname;
+                    data.patName          = pat.vorname  || data.patName;
+                    data.patZip           = pat.postleitzahl || data.patZip;
+                    data.patCity          = pat.ort || data.patCity;
+            
+                    const patStreet = pat.strasse || data.patStreet || '',
+                        hausnummer = pat.hausnummer || '';
+            
+                    data.patStreet        = patStreet + ' ' + hausnummer;
+            
+                    data.rawInsuranceData = pat.rawInsuranceData ? pat.rawInsuranceData : 'Keine Daten';
+                    data.rawPersonalData  = pat.rawPersonalData ? pat.rawPersonalData : 'Keine Daten';
+
+                    if (pat.geburtsdatum) {
+                        data.birthday = dayjs(pat.geburtsdatum, 'DD-MM-YYYY').format('YYYY-MM-DD')
+                    }
+            
+                    data.stammVersNr      = pat.versichertenNummer ? pat.versichertenNummer : data.stammVersNr;
+                    data.versNr           = pat.kostentraegerkennung;
+            
+                    data.versStatus       = pat.versichertenStatus ? pat.versichertenStatus : data.versStatus;
+            
+                    data.kkCard = true;
                 }
-        
-                data.stammVersNr      = pat.versichertenNummer ? pat.versichertenNummer : data.stammVersNr;
-                data.versNr           = pat.kostentraegerkennung;
-        
-                data.versStatus       = pat.versichertenStatus ? pat.versichertenStatus : data.versStatus;
-        
-                data.kkCard = true;
+                this.stopReadCard()
+                return data;
+            } catch (error) {
+                log('setCardData error', error)
+                this.stopReadCard()
+                Notify.create({
+                    type: 'negative',
+                    message: 'Daten konnten nicht gelesen werden. Bitte versuchen Sie es erneut.',
+                    position: 'bottom',
+                    progress: true,
+                    timeout: 5000,
+                    color: 'negative',
+                    classes: 'glossy',
+                })
             }
-
-            return data;
         },
         setScanning( scanning: boolean ) {
             this._scanning = scanning;

@@ -7,6 +7,7 @@
   "dependencies": {
     "@capacitor-community/background-geolocation": "^1.2.14",
     "@capacitor-community/barcode-scanner": "^4.0.1",
+    "@capacitor-community/bluetooth-le": "^3.1.1",
     "@capacitor-community/file-opener": "^1.0.5",
     "@capacitor/android": "^5.0.4",
     "@capacitor/app": "^5.0.2",
@@ -21,7 +22,7 @@
     "@capacitor/network": "^5.0.2",
     "@capacitor/splash-screen": "^5.0.2",
     "@capacitor/status-bar": "^5.0.2",
-    "@capgo/native-audio": "^6.0.7",
+    "@capgo/native-audio": "^6.0.13",
     "@w4b/rcr1010": "file:../rcr1010"
   }
 }

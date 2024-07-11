@@ -10,6 +10,8 @@ PODS:
     - Capacitor
   - CapacitorCommunityBarcodeScanner (4.0.1):
     - Capacitor
+  - CapacitorCommunityBluetoothLe (3.1.1):
+    - Capacitor
   - CapacitorCommunityFileOpener (1.0.5):
     - Capacitor
   - CapacitorCordova (5.0.3)
@@ -27,7 +29,7 @@ PODS:
     - Capacitor
   - CapacitorStatusBar (5.0.2):
     - Capacitor
-  - CapgoNativeAudio (6.0.7):
+  - CapgoNativeAudio (6.0.13):
     - Capacitor
   - CryptoSwift (0.15.0)
   - GzipSwift (4.1.0)
@@ -43,6 +45,7 @@ DEPENDENCIES:
   - "CapacitorAppLauncher (from `../../node_modules/@capacitor/app-launcher`)"
   - "CapacitorCommunityBackgroundGeolocation (from `../../node_modules/@capacitor-community/background-geolocation`)"
   - "CapacitorCommunityBarcodeScanner (from `../../node_modules/@capacitor-community/barcode-scanner`)"
+  - "CapacitorCommunityBluetoothLe (from `../../node_modules/@capacitor-community/bluetooth-le`)"
   - "CapacitorCommunityFileOpener (from `../../node_modules/@capacitor-community/file-opener`)"
   - "CapacitorCordova (from `../../node_modules/@capacitor/ios`)"
   - "CapacitorDevice (from `../../node_modules/@capacitor/device`)"
@@ -72,6 +75,8 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/@capacitor-community/background-geolocation"
   CapacitorCommunityBarcodeScanner:
     :path: "../../node_modules/@capacitor-community/barcode-scanner"
+  CapacitorCommunityBluetoothLe:
+    :path: "../../node_modules/@capacitor-community/bluetooth-le"
   CapacitorCommunityFileOpener:
     :path: "../../node_modules/@capacitor-community/file-opener"
   CapacitorCordova:
@@ -102,6 +107,7 @@ SPEC CHECKSUMS:
   CapacitorAppLauncher: 222eb443f90379a47bd84c8b3ed8ec47fa7e236f
   CapacitorCommunityBackgroundGeolocation: 6f26f4290377dbd1d6dec21e62cb66f008f61ec7
   CapacitorCommunityBarcodeScanner: 7feb206489c8555a8ca0c74c57ddf49ead774eb8
+  CapacitorCommunityBluetoothLe: 86ca83c89199336039bad94f45f8363114ae1464
   CapacitorCommunityFileOpener: 8ae87db61961a6166cb929cc16e3cc719ea58da1
   CapacitorCordova: def732a63679698df6fb392bbe6d269a0b61e937
   CapacitorDevice: 980e172f6fbfa0a945c73f908adc74b5a031e7d4
@@ -111,11 +117,11 @@ SPEC CHECKSUMS:
   CapacitorNetwork: 77c00ce41b4e014cbc6fdcb233462e7fce4b4755
   CapacitorSplashScreen: bd2a056394ba0b8807e7bb3e746424f67c426e03
   CapacitorStatusBar: 48f2899f6846cc7d8431b251ebfc58e1c10e3d58
-  CapgoNativeAudio: 793a67aee4cf5d40b8f07b45a73954333e69e61e
+  CapgoNativeAudio: 3cf6582984eacc721801be7e4c2abb5de7060fdb
   CryptoSwift: 769f58a9e89f64e8796c2e59ce5f002dc81a2438
   GzipSwift: df1636fa095bd8f21d98db14e7393ecc9e230fed
   W4bRcr1010: 97555d6c5c16e1766938d1f0fadd687748ed0835
 
-PODFILE CHECKSUM: 85de37ed3924380e18ebcc038203533946eb8946
+PODFILE CHECKSUM: 6f0c072f080832dcc71f7f4333026e18af34dea6
 
 COCOAPODS: 1.12.1

@@ -61,9 +61,9 @@ module.exports = configure(function (/* ctx */) {
       vueRouterMode: 'hash', // available values: 'hash', 'history'
       env: {
         dev: {
-          fahrer:       'cd1',
+          fahrer:       'CD11',
           username:     'cd',
-          password:     'IwidF51'
+          password:     'IwidF51*'
         },
         beta: {
           fahrer:       'fl',

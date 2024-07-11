@@ -41,7 +41,11 @@ class PCHeader
         if (cmpCrc != self.CRC) { throw PCHeaderError.invalidCRC};
         
         self.Timestamp = UInt32(data[2]) | UInt32(data[3]) << 8 | UInt32(data[4]) << 16 | UInt32(data[5]) << 24;
-        self.Card = CardType(rawValue: data[6])!
+        if let card = CardType(rawValue: data[6]) {
+            self.Card = card
+        } else {
+            self.Card = CardType(rawValue: 0)!
+        }
         self.CardSerial = Array(data[7..<19])
         self.DataCrc = UInt16(data[19]) | UInt16(data[20]) << 8 ;
         self.KeyVersion = UInt16(data[21]) | UInt16(data[22]) << 8 ;

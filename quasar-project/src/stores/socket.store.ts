@@ -51,14 +51,14 @@ export const useSocketStore = defineStore('socketStore', {
            
             sockHdl = null;
             const version       = accVersion.value ? accVersion.value.split('.')[0] : 'X';
-          
-            const domain = `https://${accDomain.value}.dispolive.de`
-            //TODO
-            //switch here between different socket versions
-            //sockHdl   = version >= '6' ? await sock4.init(domain) : await sock1.init(domain);
-
-            sockHdl   = io( `${domain}/app` );
             
+            const domain = `https://${accDomain.value}.dispolive.de`
+
+            if ( !accountStore._dispo6 )
+                sockHdl   = io( `${domain}/app` );
+            else
+                sockHdl = await sock4.init(`${domain}/app`)
+
             if ( device.value.platform === 'ios' )
                 LocalNotifications.requestPermissions();
 
@@ -70,8 +70,10 @@ export const useSocketStore = defineStore('socketStore', {
             return new Promise( ( resolve, reject) => {
                 try {
                     sockHdl.on('connect', () => {
-                        console.log('socket connected')
+                        console.log('socket connected', accountStore._sessionId)
                         this._connected = true;
+
+                        sockHdl.emit('setSession', { sessionId: accountStore._sessionId })
       
                         const fahrberichteStore = useFahrberichteStore();
                         fahrberichteStore.getChangesFb();

@@ -43,6 +43,8 @@
 	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>
@@ -74,8 +76,11 @@
 		<string>bluetooth-central</string>
 		<string>fetch</string>
 		<string>location</string>
+		<string>processing</string>
 		<string>remote-notification</string>
 	</array>
+	<key>UIFileSharingEnabled</key>
+	<true/>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
@@ -99,9 +104,5 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
-    <key>UIFileSharingEnabled</key>
-    <true/>
-    <key>LSSupportsOpeningDocumentsInPlace</key>
-    <true/>
 </dict>
 </plist>

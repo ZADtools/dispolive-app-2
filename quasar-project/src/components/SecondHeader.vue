@@ -20,17 +20,17 @@
         </div>
         <!-- fahrberichteheader -->
         <div class="row q-pa-sm" v-show="secondHeader === 'Fahrberichte'">
-            <div class="col-4 q-pr-xs">
+            <div class="col-4 q-pr-xs" v-if="settings.ipadVorlauf !== 1">
                 <q-btn unelevated align="center" class="full-width col-6 text-body1" padding="6px" :color="btnColorToday" @click="changeDay('today')" >
                 <div class="ellipsis">
                         {{ setNextDayLabel('today') }}
                     </div>
                 </q-btn>
             </div>
-            <div class="col-4 text-body1 text-center ellipsis text-bold text-white bg-secondary" style="padding-top: 6px">
+            <div :class="settings.ipadVorlauf !== 1 ? 'col-4' : 'col-12'" class="text-body1 text-center ellipsis text-bold text-white bg-secondary" style="padding-top: 6px">
                 {{actDay}}
             </div>
-            <div class="col-4 q-pl-xs">  
+            <div class="col-4 q-pl-xs" v-if="settings.ipadVorlauf !== 1">  
                 <q-btn unelevated align="center" class="full-width col-6 ellipsis text-body1" padding="6px" :color="btnColorNext" @click="changeDay('next')" >
                 <div class="ellipsis">
                         {{ setNextDayLabel('next')}}
@@ -106,14 +106,21 @@
             <div class="col-12" v-if="isScanning">
                 <q-btn unelevated color="negative" class="text-body1" padding="6px" @click="cardreaderStore.stopBarcodeScanning()" label="Abbrechen" />
             </div>
-            <div class="col-6 q-pr-xs" v-if="!isScanning">
+            <div class="col-4 q-pr-xs" v-if="!isScanning">
+                <q-btn unelevated class="full-width ellipsis text-body1" padding="6px" color="negative" @click="cardreaderStore.backToDevice()">
+                    <div class="ellipsis">
+                        Zurück
+                    </div>
+                </q-btn>
+            </div>
+            <div class="col-4 q-pr-xs" v-if="!isScanning">
                 <q-btn unelevated class="full-width ellipsis text-body1" padding="6px" color="primary" @click="cardreaderStore.startPairing">
                     <div class="ellipsis">
                         Gerät Koppeln
                     </div>
                 </q-btn>
             </div>
-            <div class="col-6 q-pl-xs" v-if="!isScanning">
+            <div class="col-4 q-pl-xs" v-if="!isScanning">
                 <q-btn unelevated class="full-width ellipsis text-body1" padding="6px"  color="primary" @click="cardreaderStore.readCard">
                     <div class="ellipsis">
                         EGK lesen
@@ -145,6 +152,7 @@ import { useDienstplanStore }       from 'src/stores/dienstplan.store';
 import { useCardreaderStore }       from 'src/stores/cardreader.store';
 import { usePatientenStore }        from 'src/stores/patienten.store';
 import { useAuditStore }            from 'src/stores/audit.store';
+import { useSettingsStore }         from 'src/stores/settings.store';
 import Dialog                       from 'src/components/Dialog.vue';
 import TextSnippets                 from 'src/components/TextSnippets.vue';
 import { Dark }                     from 'quasar';
@@ -159,7 +167,7 @@ const fahrberichteStore = useFahrberichteStore()
 const { actDay } = storeToRefs(fahrberichteStore)
 
 const cardreaderStore = useCardreaderStore()
-const { isScanning } = storeToRefs(cardreaderStore)
+const { isScanning, device } = storeToRefs(cardreaderStore)
 
 const patientenStore = usePatientenStore()
 
@@ -170,6 +178,9 @@ const messengerStore = useMessengerStore()
 
 const dienstplanStore = useDienstplanStore();
 const { pers } = storeToRefs(dienstplanStore);
+
+const settingsStore = useSettingsStore();
+const { item: settings } = storeToRefs(settingsStore);
 
 const auditStore = useAuditStore();
 

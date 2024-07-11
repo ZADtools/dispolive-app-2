@@ -145,7 +145,6 @@ async function stopReadCard() {
 watch( cardResponse, async ( newVal ) => {
     if ( Object.keys(newVal).length > 0 ) {
         editData.value = await cardreaderStore.setCardData( editData.value )
-        console.log('111', editData.value)
         id.value = uid();
     }
 } )

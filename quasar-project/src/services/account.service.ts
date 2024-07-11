@@ -45,7 +45,7 @@ async function login( data: any ) {
         if (response.data.session) {
             session = response.data.session
         }
-    
+
         return response.data
     } catch (err: any) {
         if (err.status) {
@@ -77,6 +77,13 @@ function printEinsatzprotokoll( { params }: any ) {
             reject(err)
         }
     })
+}
+
+function sendPanicButton( data: any ) {
+    const socketStore = useSocketStore()
+    const { io } = storeToRefs(socketStore)
+
+    io.value.emit('panicButton', data);
 }
 
 function logout( { sessionID }: any ) {
@@ -353,7 +360,7 @@ function getDataSocket( { event, param }: { event: string, param?: any }) {
 
     return new Promise( (resolve, reject) => {
         io.value.emit( event, paramsData, (data: any) => {
-            log('fetchData', event, paramsData, data)
+            console.log('fetchData', event, paramsData, data)
 
             resolve(data);
         });
@@ -369,5 +376,6 @@ export const accountService = {
     transferItem,
     transferFile,
     getDataSocket,
-    printEinsatzprotokoll
+    printEinsatzprotokoll,
+    sendPanicButton
 };

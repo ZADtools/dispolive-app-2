@@ -114,6 +114,7 @@ export interface IAccountState {
     _appInForeground:    boolean;
     _lockDevice:         boolean;
     _callDialog:         boolean;
+    _dispo6:             boolean;
     _errorVersion:       boolean;
     _packVersion:        string;
     _appCarNote:         any;
@@ -136,6 +137,7 @@ export const useAccountStore = defineStore('accountStore', {
         _domain:             {},
         _user:               null,
         _fahrer:             null,
+        _dispo6:             false,
         _beifahrer:          null,
         _title:              'dispolive',
         _navigationItems:    [],
@@ -293,6 +295,12 @@ export const useAccountStore = defineStore('accountStore', {
         setStandartNavigation( ) {
             this._standartNavigation = LocalStorage.getItem('navigation') || '';
         },
+        sendPanicButton( ) {
+            const fahrzeugeStore = useFahrzeugeStore();
+            const { item: car } = storeToRefs(fahrzeugeStore);
+
+            accountService.sendPanicButton( { data: car.value } );
+        },
         async checkNavigationApps( ) {
             const googlemaps    = await AppLauncher.canOpenUrl({ url: this._device.platform === 'ios' ? 'comgooglemaps://' : 'com.google.android.apps.maps' });
             const here          = await AppLauncher.canOpenUrl({ url: this._device.platform === 'ios' ? 'here-route://' : 'com.here.app.maps' });
@@ -424,7 +432,6 @@ export const useAccountStore = defineStore('accountStore', {
             }
         },
         sendAppCarNote( data: { text: string, car: string  } ) {
-            log('test', data)
             const fahrzeugeStore = useFahrzeugeStore();
             const { item: car } = storeToRefs(fahrzeugeStore);
             if ( car.value?._id === data.car )
@@ -489,6 +496,7 @@ export const useAccountStore = defineStore('accountStore', {
         async init( ) {
             try {
                 const domain: string | null = await LocalStorage.getItem('domain')
+                
                 await accountService.setDomain( domain || '' )
                 this._domain = domain || {}
             } catch (err) {
@@ -498,17 +506,17 @@ export const useAccountStore = defineStore('accountStore', {
         },
         async login( data: any ) {
             const response        = await accountService.login( data );
-
             if (!response?.session) {
                 return;
             } else {
                 this._loggedIn = true;
             }
-            
+
             this._sessionId = response.session || null
             this._beifahrer = response.user || null
             this._fahrer = response.fahrer || null
             this._version = response.version || null
+            this._dispo6 = response.dispo6 || false
         },
         loginFailure( ) {
             this._loggedIn              = false

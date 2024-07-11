@@ -1,7 +1,7 @@
 import { defineStore, storeToRefs }                              from 'pinia';
 import Debug                                        from 'debug';  
 import { NativeAudio }                              from '@capgo/native-audio'
-import { useAccountStore }                          from './account.store';
+import { useAccountStore }                          from './account.store'; 
 
 const log       = Debug('app:audio.module');
 log('start')

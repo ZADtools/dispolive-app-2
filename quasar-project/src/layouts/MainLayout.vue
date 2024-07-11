@@ -110,6 +110,7 @@ import { Global }                                                               
 import dayjs                                                                    from 'dayjs';
 import Dialog                                                                   from '../components/Dialog.vue';
 import SecondHeader                                                             from 'src/components/SecondHeader.vue';
+import { BleClient }                                                            from '@capacitor-community/bluetooth-le';
 import { QSpinnerOval, Dark, Notify }                                           from 'quasar';
 import { useAccountStore }                                                      from 'src/stores/account.store';
 import { useFahrzeugeStore }                                                    from 'src/stores/fahrzeuge.store';
@@ -258,15 +259,18 @@ onBeforeMount( async () => {
         log('getTransportart done');
         await verordnungsartStore.getData();
         log('getVerordnungsart done');
+        //await BleClient.initialize();
+        log('BleClient initialize done');
 
         //get navigation points
         linksList.value = global.navigation.filter( (item) => {
-            log(item)
             if ( settings.value.kontakte === 1 && item.link === 'contact' )
                 return false
-            else if ( settings.value.dienstplan === 1 && item.link === 'checklistEmployee' )
+            else if ( settings.value.dienstplan === 1 && item.link === 'dienstplan' )
                 return false
             else if ( device.value.platform === 'android' && item.link === 'cardreader' )
+                return false
+            else if ( !accountStore._dispo6 && item.link === 'panicButton' )
                 return false
             else
                 return true

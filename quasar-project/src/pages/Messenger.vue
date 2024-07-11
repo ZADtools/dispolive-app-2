@@ -125,12 +125,13 @@ async function onLoad (index: number, done: any) {
 }
 
 onBeforeMount( () => {
-    if ( scrollEnd.value )
-        scrollList.value.stop()
+    // if ( scrollEnd.value )
+    //     scrollList.value.stop()
 
     accountStore.setSecondHeader('messages');
     accountStore.setTitle('Messenger')
     messengerStore.setUnread(0);
+    messengerStore.allRead();
 } )
 
 async function sendMessage () {

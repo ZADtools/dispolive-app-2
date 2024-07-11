@@ -262,7 +262,7 @@
                     @update:model-value="setValues('kategorie', $event)"
                     transition-hide="jump-down" 
                     :options="kategorien" 
-                    label="Kategorien" 
+                    label="Kategorie" 
                     stack-label
                     map-options
                     option-value="_id"

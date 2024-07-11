@@ -490,7 +490,6 @@ function changeData (item: any) {
 }
 
 async function saveData () {
-    console.log(222, selectedFahrten.value)
     if (selectedFahrten.value.length === 0 ) {
         log('keine aktive fahrt')
         form.value._id = uid();
