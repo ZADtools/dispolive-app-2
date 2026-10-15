@@ -1,0 +1,124 @@
+import { defineStore, storeToRefs }         from 'pinia';
+import Debug                                from 'debug';
+import { useAccountStore }                  from './account.store';
+import { useMenuStore }                     from './menu.store';
+import { useMessengerStore }                from './messenger.store';
+import { useFahrberichteStore }             from './fahrberichte.store';
+import { useAuditStore }                    from './audit.store';
+import { ISocket4, sock4 }                  from '@w4b/socket-4';
+import { App }                              from '@capacitor/app';
+import { LocalNotifications }               from '@capacitor/local-notifications';
+import { useAudioStore }                    from './audio.store';
+import { nextTick }                         from 'vue';
+
+const log       = Debug('app:socket.module');
+
+let sockHdl: any = null;
+
+export interface ISocketState {
+    _socket:         ISocket4 | null;
+    _connected:      boolean
+}
+
+export const useSocketStore = defineStore('socketStore', {
+    state: (): ISocketState => ({
+        _socket:         null,
+        _connected:      false
+    }),
+    getters: {
+        io: () => {
+            return sockHdl;
+        },
+        connected: (state) => state._connected
+    },
+    actions: {
+        async remove( ) {
+            log('remove')
+            sockHdl = await sockHdl.off();
+            sockHdl = null;
+            console.log('remove done', sockHdl)
+            this._connected = false;
+            this.$dispose();
+        },
+
+        async init( ) {
+            const accountStore  = useAccountStore();
+            const { version: accVersion, domain: accDomain, device } = storeToRefs(accountStore);
+            
+            const menuStore     = useMenuStore();
+            const { item } = storeToRefs(menuStore);
+           
+            sockHdl = null;
+            const version       = accVersion.value ? accVersion.value.split('.')[0] : 'X';
+            
+            const domain = `https://${accDomain.value}.dispolive.de`
+
+            sockHdl = await sock4.init(`${domain}/app`)
+
+            if ( device.value.platform === 'ios' )
+                LocalNotifications.requestPermissions();
+
+            App.addListener('appStateChange', ({ isActive }: { isActive: boolean }) => {
+                log('appstate change')
+                accountStore.setAppInForeground( isActive )
+            });
+
+            return new Promise( ( resolve, reject) => {
+                try {
+                    sockHdl.on('connect', () => {
+                        console.log('socket connected', accountStore._sessionId)
+                        this._connected = true;
+
+                        sockHdl.emit('setSession', { sessionId: accountStore._sessionId })
+      
+                        const fahrberichteStore = useFahrberichteStore();
+                        fahrberichteStore.getChangesFb();
+
+                        menuStore.createSocketRoom()
+                        menuStore.setStatus({})
+
+                        const messengerStore = useMessengerStore();
+                        messengerStore.getMessagesNow()
+
+                        resolve(true)
+                    })
+
+                    sockHdl.on('disconnect', () => {
+                        this._connected = false;
+                        log('disconnect')
+                        resolve(true)
+                    })
+
+                    sockHdl.on('receivedFb', () => {
+                        log('receivedFb')
+                        const fahrberichteStore = useFahrberichteStore();
+                        fahrberichteStore.getChangesFb();
+                    });
+            
+                    sockHdl.on( 'sendAppCarNote', async ( ) => {
+                        const messengerStore = useMessengerStore();
+                        messengerStore.getMessagesNow()
+                    });
+
+                    sockHdl.on( 'addCarToPause', async ( ) => {
+                        if ( item.value?.status !== 'frei' )
+                            return;
+
+                        const stat = await menuStore.setStatus({status: 'pause'})
+                        const audioStore = useAudioStore();
+                        audioStore.play( 'pause' )
+
+                        if ( stat?.error === 'activeTrips' ) {
+                            accountStore.setPauseDialog(true)
+                            return;
+                        }
+
+                        menuStore.informStatusPause(true)
+                    });
+                } catch (error) {
+                    reject();
+                }
+            })
+        }
+    },
+});

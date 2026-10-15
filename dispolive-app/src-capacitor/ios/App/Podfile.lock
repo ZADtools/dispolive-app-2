@@ -1,0 +1,131 @@
+PODS:
+  - AEXML (4.3.3)
+  - Capacitor (6.2.0):
+    - CapacitorCordova
+  - CapacitorApp (6.0.2):
+    - Capacitor
+  - CapacitorAppLauncher (6.0.3):
+    - Capacitor
+  - CapacitorBarcodeScanner (1.0.4):
+    - Capacitor
+    - OSBarcodeLib (~> 1.1.0)
+  - CapacitorCommunityBackgroundGeolocation (0.0.1):
+    - Capacitor
+  - CapacitorCommunityFileOpener (6.0.1):
+    - Capacitor
+  - CapacitorCordova (6.2.0)
+  - CapacitorDevice (6.0.2):
+    - Capacitor
+  - CapacitorDocumentScanner (2.0.0):
+    - Capacitor
+  - CapacitorFilesystem (6.0.2):
+    - Capacitor
+  - CapacitorKeyboard (6.0.3):
+    - Capacitor
+  - CapacitorLocalNotifications (6.1.1):
+    - Capacitor
+  - CapacitorNetwork (6.0.3):
+    - Capacitor
+  - CapacitorSplashScreen (6.0.3):
+    - Capacitor
+  - CapacitorStatusBar (6.0.2):
+    - Capacitor
+  - CapgoNativeAudio (6.4.23):
+    - Capacitor
+  - CryptoSwift (0.15.0)
+  - GzipSwift (4.1.0)
+  - OSBarcodeLib (1.1.3)
+  - W4bRcr1010 (0.0.2):
+    - AEXML (= 4.3.3)
+    - Capacitor
+    - CryptoSwift (= 0.15.0)
+    - GzipSwift (= 4.1.0)
+
+DEPENDENCIES:
+  - "Capacitor (from `../../node_modules/@capacitor/ios`)"
+  - "CapacitorApp (from `../../node_modules/@capacitor/app`)"
+  - "CapacitorAppLauncher (from `../../node_modules/@capacitor/app-launcher`)"
+  - "CapacitorBarcodeScanner (from `../../node_modules/@capacitor/barcode-scanner`)"
+  - "CapacitorCommunityBackgroundGeolocation (from `../../node_modules/@capacitor-community/background-geolocation`)"
+  - "CapacitorCommunityFileOpener (from `../../node_modules/@capacitor-community/file-opener`)"
+  - "CapacitorCordova (from `../../node_modules/@capacitor/ios`)"
+  - "CapacitorDevice (from `../../node_modules/@capacitor/device`)"
+  - CapacitorDocumentScanner (from `../../node_modules/capacitor-document-scanner`)
+  - "CapacitorFilesystem (from `../../node_modules/@capacitor/filesystem`)"
+  - "CapacitorKeyboard (from `../../node_modules/@capacitor/keyboard`)"
+  - "CapacitorLocalNotifications (from `../../node_modules/@capacitor/local-notifications`)"
+  - "CapacitorNetwork (from `../../node_modules/@capacitor/network`)"
+  - "CapacitorSplashScreen (from `../../node_modules/@capacitor/splash-screen`)"
+  - "CapacitorStatusBar (from `../../node_modules/@capacitor/status-bar`)"
+  - "CapgoNativeAudio (from `../../node_modules/@capgo/native-audio`)"
+  - W4bRcr1010 (from `../../../rcr1010`)
+
+SPEC REPOS:
+  trunk:
+    - AEXML
+    - CryptoSwift
+    - GzipSwift
+    - OSBarcodeLib
+
+EXTERNAL SOURCES:
+  Capacitor:
+    :path: "../../node_modules/@capacitor/ios"
+  CapacitorApp:
+    :path: "../../node_modules/@capacitor/app"
+  CapacitorAppLauncher:
+    :path: "../../node_modules/@capacitor/app-launcher"
+  CapacitorBarcodeScanner:
+    :path: "../../node_modules/@capacitor/barcode-scanner"
+  CapacitorCommunityBackgroundGeolocation:
+    :path: "../../node_modules/@capacitor-community/background-geolocation"
+  CapacitorCommunityFileOpener:
+    :path: "../../node_modules/@capacitor-community/file-opener"
+  CapacitorCordova:
+    :path: "../../node_modules/@capacitor/ios"
+  CapacitorDevice:
+    :path: "../../node_modules/@capacitor/device"
+  CapacitorDocumentScanner:
+    :path: "../../node_modules/capacitor-document-scanner"
+  CapacitorFilesystem:
+    :path: "../../node_modules/@capacitor/filesystem"
+  CapacitorKeyboard:
+    :path: "../../node_modules/@capacitor/keyboard"
+  CapacitorLocalNotifications:
+    :path: "../../node_modules/@capacitor/local-notifications"
+  CapacitorNetwork:
+    :path: "../../node_modules/@capacitor/network"
+  CapacitorSplashScreen:
+    :path: "../../node_modules/@capacitor/splash-screen"
+  CapacitorStatusBar:
+    :path: "../../node_modules/@capacitor/status-bar"
+  CapgoNativeAudio:
+    :path: "../../node_modules/@capgo/native-audio"
+  W4bRcr1010:
+    :path: "../../../rcr1010"
+
+SPEC CHECKSUMS:
+  AEXML: 601f41fcaa7bda7605cad153b0f43db9ec006c0f
+  Capacitor: 1f3c7b9802d958cd8c4eb63895fff85dff2e1eea
+  CapacitorApp: 2a8c3a0b0814322e5e6e15fe595f02c3808f0f8b
+  CapacitorAppLauncher: a9fb7da942e89fa9cb2bb1e579c8bd2ab81652a5
+  CapacitorBarcodeScanner: 869a8f023e90b7cc92c18919732e3d935b2c0792
+  CapacitorCommunityBackgroundGeolocation: 6f26f4290377dbd1d6dec21e62cb66f008f61ec7
+  CapacitorCommunityFileOpener: f383451eef66633c7d80e8d247fcfd35032b99d0
+  CapacitorCordova: b33e7f4aa4ed105dd43283acdd940964374a87d9
+  CapacitorDevice: 1a215717f0b5061503b21a03508b0ec458a57d78
+  CapacitorDocumentScanner: 681e11202fb0922d3b83a670b8c07e280f87096f
+  CapacitorFilesystem: c832a3f6d4870c3872688e782ae8e33665e6ecbf
+  CapacitorKeyboard: 460c6f9ec5e52c84f2742d5ce2e67bbc7ab0ebb0
+  CapacitorLocalNotifications: 113dcab0b40781e8463bfdbbd6b54c6116361644
+  CapacitorNetwork: da96b5fff8d05b67f4658503aabb22f65bda2c0f
+  CapacitorSplashScreen: 68893659d77b5f82d753b3a70475082845e3039c
+  CapacitorStatusBar: 3b9ac7d0684770522c532d1158a1434512ab1477
+  CapgoNativeAudio: 9ad122368ba4ac9cc19f9cc04e4c16a681c093f4
+  CryptoSwift: 769f58a9e89f64e8796c2e59ce5f002dc81a2438
+  GzipSwift: df1636fa095bd8f21d98db14e7393ecc9e230fed
+  OSBarcodeLib: f2e981270a64faf476cb790864262b29ab8cd68a
+  W4bRcr1010: 97555d6c5c16e1766938d1f0fadd687748ed0835
+
+PODFILE CHECKSUM: 8f323097d3a64e7494d3f149949a5c9f24e448a9
+
+COCOAPODS: 1.16.2
