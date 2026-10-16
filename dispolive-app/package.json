@@ -9,7 +9,11 @@
     "lint": "eslint --ext .js,.ts,.vue ./",
     "test": "echo \"No test specified\" && exit 0",
     "dev": "quasar dev",
-    "build": "quasar build"
+    "build": "quasar build",
+    "dev-ios": "quasar dev -m capacitor -T ios",
+    "build-ios": "quasar build -m capacitor -T ios",
+    "dev-android": "quasar dev -m capacitor -T android",
+    "build-android": "quasar build -m capacitor -T android"
   },
   "dependencies": {
     "@capacitor-community/background-geolocation": "^1.2.19",
